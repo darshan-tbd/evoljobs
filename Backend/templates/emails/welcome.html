@@ -1,0 +1,48 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Welcome to JobPilot!{% endblock %}
+
+{% block header_title %}Welcome to JobPilot!{% endblock %}
+{% block header_subtitle %}Let's find your dream job together{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }}!</h2>
+
+<p>Welcome to JobPilot! We're excited to have you join our community of job seekers and help you find your perfect career opportunity.</p>
+
+<div class="alert alert-success">
+    <strong>Your account is ready!</strong> You can now start exploring job opportunities that match your skills and interests.
+</div>
+
+<h3>🚀 Get Started</h3>
+<p>Here's what you can do next to make the most of your JobPilot experience:</p>
+
+<ul>
+    <li><strong>Complete your profile</strong> - Add your skills, experience, and preferences for better job matching</li>
+    <li><strong>Browse jobs</strong> - Explore thousands of job opportunities from top companies</li>
+    <li><strong>Set up job alerts</strong> - Get notified when new jobs match your criteria</li>
+    <li><strong>Use AI recommendations</strong> - Let our AI find the best job matches for you</li>
+</ul>
+
+<a href="{{ site_url }}/profile" class="btn btn-primary">Complete Your Profile</a>
+<a href="{{ site_url }}/jobs" class="btn btn-secondary">Browse Jobs</a>
+
+<h3>✨ What Makes JobPilot Special?</h3>
+<p>Our AI-powered platform helps you:</p>
+<ul>
+    <li>Get personalized job recommendations based on your profile</li>
+    <li>Receive match scores for each job to see how well you fit</li>
+    <li>Track your applications and get insights on your job search</li>
+    <li>Stay updated with the latest opportunities in your field</li>
+</ul>
+
+<div class="alert alert-info">
+    <strong>💡 Pro Tip:</strong> Complete your profile within the next 24 hours to get 10% more relevant job recommendations!
+</div>
+
+<p>If you have any questions or need help getting started, don't hesitate to reach out to our support team at <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
+
+<p>Happy job hunting!</p>
+
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 

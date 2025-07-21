@@ -1,0 +1,102 @@
+{% extends "emails/base.html" %}
+
+{% block title %}{{ job_count }} New Job Match{{ job_count|pluralize:"es" }} Found{% endblock %}
+
+{% block header_title %}New Job Matches!{% endblock %}
+{% block header_subtitle %}{{ job_count }} job{{ job_count|pluralize }} matching your criteria{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }}!</h2>
+
+<p>Great news! We found <strong>{{ job_count }} new job{{ job_count|pluralize }}</strong> that match your alert criteria for "{{ alert.name }}".</p>
+
+<div class="alert alert-info">
+    <strong>Alert:</strong> {{ alert.name }}<br>
+    {% if alert.keywords %}<strong>Keywords:</strong> {{ alert.keywords }}<br>{% endif %}
+    {% if alert.location %}<strong>Location:</strong> {{ alert.location.name }}<br>{% endif %}
+    {% if alert.job_type %}<strong>Job Type:</strong> {{ alert.get_job_type_display }}<br>{% endif %}
+    {% if alert.experience_level %}<strong>Experience:</strong> {{ alert.get_experience_level_display }}<br>{% endif %}
+</div>
+
+{% for job in jobs %}
+<div class="job-card">
+    <h4>{{ job.title }}</h4>
+    <div class="company">{{ job.company.name }}</div>
+    
+    <div class="details">
+        {% if job.location %}📍 {{ job.location.name }}{% endif %}
+        {% if job.job_type %} • 💼 {{ job.get_job_type_display }}{% endif %}
+        {% if job.experience_level %} • 📈 {{ job.get_experience_level_display }}{% endif %}
+        {% if job.remote_option %} • 🏠 {{ job.get_remote_option_display }}{% endif %}
+    </div>
+    
+    {% if job.salary_display %}
+    <div class="details">💰 {{ job.salary_display }}</div>
+    {% endif %}
+    
+    {% if job.description %}
+    <p style="color: #666666; font-size: 14px; margin: 12px 0;">
+        {{ job.description|truncatewords:25|striptags }}
+    </p>
+    {% endif %}
+    
+    {% if job.required_skills.all %}
+    <div style="margin-top: 12px;">
+        <strong style="font-size: 12px; color: #666666;">Required Skills:</strong><br>
+        {% for skill in job.required_skills.all|slice:":5" %}
+            <span style="background-color: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-right: 4px; display: inline-block; margin-bottom: 4px;">
+                {{ skill.name }}
+            </span>
+        {% endfor %}
+        {% if job.required_skills.count > 5 %}
+            <span style="color: #666666; font-size: 11px;">+{{ job.required_skills.count|add:"-5" }} more</span>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 16px;">
+        <a href="{{ site_url }}/jobs/{{ job.slug }}" class="btn btn-primary" style="font-size: 14px; padding: 10px 20px;">
+            View Details
+        </a>
+        {% if job.application_url %}
+        <a href="{{ job.application_url }}" class="btn btn-secondary" style="font-size: 14px; padding: 10px 20px;">
+            Apply Now
+        </a>
+        {% else %}
+        <a href="{{ site_url }}/jobs/{{ job.slug }}/apply" class="btn btn-secondary" style="font-size: 14px; padding: 10px 20px;">
+            Apply Now
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% if jobs|length >= 10 %}
+<div class="alert alert-info">
+    <strong>More jobs available!</strong> This email shows the top {{ jobs|length }} matches. 
+    <a href="{{ site_url }}/jobs?alert={{ alert.id }}">View all matching jobs</a> on JobPilot.
+</div>
+{% endif %}
+
+<h3>💡 Tips for Success</h3>
+<ul>
+    <li>Apply quickly - the best jobs get filled fast!</li>
+    <li>Customize your application for each job</li>
+    <li>Update your profile regularly for better matches</li>
+    <li>Set up multiple alerts for different job types</li>
+</ul>
+
+<a href="{{ site_url }}/jobs" class="btn btn-primary">Browse All Jobs</a>
+<a href="{{ site_url }}/profile" class="btn btn-secondary">Update Profile</a>
+
+<hr style="margin: 30px 0; border: none; border-top: 1px solid #e9ecef;">
+
+<p style="font-size: 14px; color: #666666;">
+    This alert is set to run {{ alert.get_frequency_display|lower }}. 
+    You can <a href="{{ site_url }}/alerts/{{ alert.id }}">manage your alerts</a> 
+    or <a href="{{ unsubscribe_url }}">unsubscribe</a> at any time.
+</p>
+
+<p>Happy job hunting!</p>
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 

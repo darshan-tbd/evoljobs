@@ -1,0 +1,171 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Application Update - {{ job.title }}{% endblock %}
+
+{% block header_title %}Application Update{% endblock %}
+{% block header_subtitle %}{{ job.company.name }} has updated your application status{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }}!</h2>
+
+<p>We have an update on your application for <strong>{{ job.title }}</strong> at <strong>{{ job.company.name }}</strong>.</p>
+
+{% if application.status == 'accepted' %}
+<div class="alert alert-success">
+    <strong>🎉 Congratulations!</strong><br>
+    Your application status has been updated to: <strong>{{ application.get_status_display }}</strong>
+</div>
+{% elif application.status == 'interview' %}
+<div class="alert alert-info">
+    <strong>📞 Interview Scheduled!</strong><br>
+    Your application status has been updated to: <strong>{{ application.get_status_display }}</strong>
+</div>
+{% elif application.status == 'rejected' %}
+<div class="alert alert-warning">
+    <strong>Application Update</strong><br>
+    Your application status has been updated to: <strong>{{ application.get_status_display }}</strong>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <strong>Application Update</strong><br>
+    Your application status has been updated to: <strong>{{ application.get_status_display }}</strong>
+</div>
+{% endif %}
+
+<div class="job-card">
+    <h4>{{ job.title }}</h4>
+    <div class="company">{{ job.company.name }}</div>
+    
+    <div class="details">
+        {% if job.location %}📍 {{ job.location.name }}{% endif %}
+        {% if job.job_type %} • 💼 {{ job.get_job_type_display }}{% endif %}
+        {% if job.experience_level %} • 📈 {{ job.get_experience_level_display }}{% endif %}
+        {% if job.remote_option %} • 🏠 {{ job.get_remote_option_display }}{% endif %}
+    </div>
+    
+    {% if job.salary_display %}
+    <div class="details">💰 {{ job.salary_display }}</div>
+    {% endif %}
+    
+    <div style="margin-top: 16px;">
+        <strong>Application ID:</strong> {{ application.id }}<br>
+        <strong>Applied:</strong> {{ application.submitted_at|date:"F j, Y" }}<br>
+        <strong>Status:</strong> {{ application.get_status_display }}
+        {% if application.status_updated_at %}
+        <br><strong>Updated:</strong> {{ application.status_updated_at|date:"F j, Y \a\t g:i A" }}
+        {% endif %}
+    </div>
+</div>
+
+{% if application.employer_notes %}
+<div class="alert alert-info">
+    <strong>Message from {{ job.company.name }}:</strong><br>
+    {{ application.employer_notes|linebreaks }}
+</div>
+{% endif %}
+
+{% if application.status == 'accepted' %}
+<h3>🎉 Congratulations!</h3>
+<p>Your application has been successful! Here's what typically happens next:</p>
+<ul>
+    <li>The employer will contact you directly with next steps</li>
+    <li>You may receive an offer letter or contract</li>
+    <li>Be prepared to discuss salary, benefits, and start date</li>
+    <li>Ask any questions you have about the role or company</li>
+</ul>
+
+<h3>📋 Next Steps</h3>
+<ul>
+    <li>Check your email and phone regularly for communications</li>
+    <li>Prepare for potential salary negotiations</li>
+    <li>Update your LinkedIn profile when you're ready</li>
+    <li>Consider your other applications and interviews</li>
+</ul>
+
+{% elif application.status == 'interview' %}
+<h3>📞 Interview Process</h3>
+<p>Great news! You've been selected for an interview. Here's how to prepare:</p>
+<ul>
+    <li>Research the company thoroughly</li>
+    <li>Review the job description and requirements</li>
+    <li>Prepare specific examples of your relevant experience</li>
+    <li>Practice common interview questions</li>
+    <li>Prepare thoughtful questions to ask the interviewer</li>
+</ul>
+
+<h3>💡 Interview Tips</h3>
+<ul>
+    <li>Arrive 10-15 minutes early (or join video calls 5 minutes early)</li>
+    <li>Dress professionally, even for video interviews</li>
+    <li>Be specific when discussing your achievements</li>
+    <li>Show enthusiasm for the role and company</li>
+    <li>Follow up with a thank-you email within 24 hours</li>
+</ul>
+
+{% elif application.status == 'rejected' %}
+<h3>🚀 Keep Moving Forward</h3>
+<p>While this particular opportunity didn't work out, don't let it discourage you. Here's how to stay motivated:</p>
+<ul>
+    <li>Job searching is a numbers game - keep applying</li>
+    <li>Consider this valuable interview practice</li>
+    <li>Ask for feedback if possible to improve future applications</li>
+    <li>Update your resume with any new skills or experiences</li>
+    <li>Network with professionals in your field</li>
+</ul>
+
+<h3>💪 What's Next?</h3>
+<ul>
+    <li>Review and update your profile</li>
+    <li>Apply to similar positions</li>
+    <li>Consider expanding your search criteria</li>
+    <li>Practice your interview skills</li>
+    <li>Stay positive and persistent</li>
+</ul>
+
+{% else %}
+<h3>📋 Application Status: {{ application.get_status_display }}</h3>
+<p>Your application is being reviewed. Here's what you can expect:</p>
+<ul>
+    <li>Employers typically take 1-2 weeks to review applications</li>
+    <li>You'll be notified of any status changes</li>
+    <li>Continue applying to other opportunities</li>
+    <li>Keep your profile updated with new achievements</li>
+</ul>
+{% endif %}
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ site_url }}/applications/{{ application.id }}" class="btn btn-primary">View Application</a>
+    <a href="{{ site_url }}/jobs" class="btn btn-secondary">Find More Jobs</a>
+</div>
+
+{% if similar_jobs %}
+<h3>🎯 Similar Jobs You Might Like</h3>
+<p>Based on this application, here are some similar opportunities:</p>
+{% for similar_job in similar_jobs %}
+<div class="job-card">
+    <h4>{{ similar_job.title }}</h4>
+    <div class="company">{{ similar_job.company.name }}</div>
+    
+    <div class="details">
+        {% if similar_job.location %}📍 {{ similar_job.location.name }}{% endif %}
+        {% if similar_job.job_type %} • 💼 {{ similar_job.get_job_type_display }}{% endif %}
+        {% if similar_job.remote_option %} • 🏠 {{ similar_job.get_remote_option_display }}{% endif %}
+    </div>
+    
+    {% if similar_job.salary_display %}
+    <div class="details">💰 {{ similar_job.salary_display }}</div>
+    {% endif %}
+    
+    <div style="margin-top: 16px;">
+        <a href="{{ site_url }}/jobs/{{ similar_job.slug }}" class="btn btn-primary" style="font-size: 14px; padding: 10px 20px;">
+            View Job
+        </a>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<p>Remember, every application is a step closer to your dream job. Keep going!</p>
+
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 

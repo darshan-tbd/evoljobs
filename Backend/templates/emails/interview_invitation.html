@@ -1,0 +1,107 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Interview Invitation - {{ job.title }}{% endblock %}
+
+{% block header_title %}Interview Invitation!{% endblock %}
+{% block header_subtitle %}{{ job.company.name }} wants to interview you{% endblock %}
+
+{% block content %}
+<h2>Congratulations {{ user.first_name }}!</h2>
+
+<p>Great news! <strong>{{ job.company.name }}</strong> has reviewed your application for the <strong>{{ job.title }}</strong> position and would like to schedule an interview with you.</p>
+
+<div class="alert alert-success">
+    <strong>🎉 Interview Invitation</strong><br>
+    <strong>Position:</strong> {{ job.title }}<br>
+    <strong>Company:</strong> {{ job.company.name }}<br>
+    <strong>Interview Type:</strong> {{ interview.interview_type|default:"Not specified" }}<br>
+    {% if interview.scheduled_date %}
+    <strong>Proposed Date:</strong> {{ interview.scheduled_date|date:"F j, Y \a\t g:i A" }}<br>
+    {% endif %}
+    {% if interview.duration %}
+    <strong>Duration:</strong> {{ interview.duration }} minutes<br>
+    {% endif %}
+</div>
+
+<div class="job-card">
+    <h4>{{ job.title }}</h4>
+    <div class="company">{{ job.company.name }}</div>
+    
+    <div class="details">
+        {% if job.location %}📍 {{ job.location.name }}{% endif %}
+        {% if job.job_type %} • 💼 {{ job.get_job_type_display }}{% endif %}
+        {% if job.experience_level %} • 📈 {{ job.get_experience_level_display }}{% endif %}
+        {% if job.remote_option %} • 🏠 {{ job.get_remote_option_display }}{% endif %}
+    </div>
+    
+    {% if job.salary_display %}
+    <div class="details">💰 {{ job.salary_display }}</div>
+    {% endif %}
+</div>
+
+<h3>📋 Interview Details</h3>
+<ul>
+    {% if interview.interview_type %}
+    <li><strong>Format:</strong> {{ interview.get_interview_type_display }}</li>
+    {% endif %}
+    {% if interview.location %}
+    <li><strong>Location:</strong> {{ interview.location }}</li>
+    {% endif %}
+    {% if interview.meeting_link %}
+    <li><strong>Meeting Link:</strong> <a href="{{ interview.meeting_link }}">{{ interview.meeting_link }}</a></li>
+    {% endif %}
+    {% if interview.interviewer_name %}
+    <li><strong>Interviewer:</strong> {{ interview.interviewer_name }}{% if interview.interviewer_title %}, {{ interview.interviewer_title }}{% endif %}</li>
+    {% endif %}
+    {% if interview.contact_email %}
+    <li><strong>Contact:</strong> <a href="mailto:{{ interview.contact_email }}">{{ interview.contact_email }}</a></li>
+    {% endif %}
+</ul>
+
+{% if interview.notes %}
+<div class="alert alert-info">
+    <strong>Additional Notes:</strong><br>
+    {{ interview.notes|linebreaks }}
+</div>
+{% endif %}
+
+<div style="text-align: center; margin: 30px 0;">
+    {% if interview.confirmation_link %}
+    <a href="{{ interview.confirmation_link }}" class="btn btn-primary" style="font-size: 18px; padding: 16px 32px;">
+        Confirm Interview
+    </a>
+    {% endif %}
+    <a href="{{ site_url }}/applications/{{ application.id }}" class="btn btn-secondary" style="font-size: 16px; padding: 12px 24px;">
+        View Application
+    </a>
+</div>
+
+<h3>🎯 How to Prepare</h3>
+<ul>
+    <li><strong>Research the company:</strong> Learn about their mission, values, and recent news</li>
+    <li><strong>Review the job description:</strong> Prepare specific examples of your relevant experience</li>
+    <li><strong>Practice common questions:</strong> "Tell me about yourself", "Why do you want this job?", etc.</li>
+    <li><strong>Prepare questions:</strong> Ask about the role, team, and company culture</li>
+    <li><strong>Test your tech:</strong> If it's a video interview, test your camera, microphone, and internet</li>
+</ul>
+
+<h3>📝 What to Bring/Prepare</h3>
+<ul>
+    <li>Updated resume and portfolio (if applicable)</li>
+    <li>List of references</li>
+    <li>Questions about the role and company</li>
+    <li>Specific examples of your achievements</li>
+    <li>Professional attire (even for video interviews)</li>
+</ul>
+
+<div class="alert alert-info">
+    <strong>💡 Pro Tip:</strong> Research your interviewer on LinkedIn to find common connections or interests that might help break the ice.
+</div>
+
+<p>This is a great opportunity to show them why you're the perfect fit for this role. Be confident, be yourself, and let your passion shine through!</p>
+
+<p>If you have any questions or need to reschedule, please contact {{ interview.contact_email|default:job.company.contact_email }} as soon as possible.</p>
+
+<p>Best of luck with your interview!</p>
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 

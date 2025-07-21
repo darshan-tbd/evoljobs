@@ -1,0 +1,114 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Your Weekly Job Search Digest{% endblock %}
+
+{% block header_title %}Weekly Digest{% endblock %}
+{% block header_subtitle %}Your job search activity from {{ start_date|date:"M j" }} - {{ end_date|date:"M j, Y" }}{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }}!</h2>
+
+<p>Here's your weekly job search summary. You're making great progress!</p>
+
+<div class="alert alert-info">
+    <strong>This Week's Activity:</strong><br>
+    📊 {{ stats.profile_views }} profile views<br>
+    📝 {{ stats.applications_sent }} applications sent<br>
+    🎯 {{ stats.new_matches }} new job matches<br>
+    💾 {{ stats.jobs_saved }} jobs saved<br>
+    🔍 {{ stats.searches_performed }} searches performed
+</div>
+
+{% if featured_jobs %}
+<h3>🌟 Top Matches This Week</h3>
+<p>Based on your profile, here are the best job matches we found:</p>
+
+{% for job in featured_jobs %}
+<div class="job-card">
+    <h4>{{ job.title }}</h4>
+    <div class="company">{{ job.company.name }}</div>
+    
+    <div class="details">
+        {% if job.location %}📍 {{ job.location.name }}{% endif %}
+        {% if job.job_type %} • 💼 {{ job.get_job_type_display }}{% endif %}
+        {% if job.remote_option %} • 🏠 {{ job.get_remote_option_display }}{% endif %}
+    </div>
+    
+    {% if job.salary_display %}
+    <div class="details">💰 {{ job.salary_display }}</div>
+    {% endif %}
+    
+    {% if job.match_score %}
+    <div style="margin-top: 12px;">
+        <span class="match-score">{{ job.match_score }}% Match</span>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 16px;">
+        <a href="{{ site_url }}/jobs/{{ job.slug }}" class="btn btn-primary" style="font-size: 14px; padding: 10px 20px;">
+            View Job
+        </a>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<h3>📈 Your Progress</h3>
+<ul>
+    <li>Profile completeness: {{ profile_completion }}%</li>
+    <li>Total applications sent: {{ stats.total_applications }}</li>
+    <li>Application response rate: {{ stats.response_rate }}%</li>
+    <li>Jobs in your saved list: {{ stats.saved_jobs_count }}</li>
+</ul>
+
+{% if recent_applications %}
+<h3>📋 Recent Applications</h3>
+<ul>
+    {% for app in recent_applications %}
+    <li>
+        <strong>{{ app.job.title }}</strong> at {{ app.job.company.name }}
+        <span style="color: #666666; font-size: 14px;">
+            - {{ app.submitted_at|date:"M j" }} 
+            ({{ app.get_status_display }})
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<h3>💡 This Week's Tips</h3>
+<ul>
+    <li><strong>Follow up:</strong> Send a polite follow-up email to employers 1-2 weeks after applying</li>
+    <li><strong>Network:</strong> Connect with professionals in your field on LinkedIn</li>
+    <li><strong>Optimize:</strong> Update your profile with new skills and achievements</li>
+    <li><strong>Stay active:</strong> Apply to 3-5 jobs per week to maintain momentum</li>
+</ul>
+
+{% if industry_insights %}
+<h3>🏢 Industry Insights</h3>
+<div class="alert alert-info">
+    <strong>{{ industry_insights.industry_name }} Industry:</strong><br>
+    • {{ industry_insights.new_jobs_count }} new jobs posted this week<br>
+    • Average salary: {{ industry_insights.avg_salary }}<br>
+    • Top skills in demand: {{ industry_insights.top_skills|join:", " }}<br>
+    • Fastest growing companies: {{ industry_insights.growing_companies|join:", " }}
+</div>
+{% endif %}
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ site_url }}/jobs" class="btn btn-primary">Browse Jobs</a>
+    <a href="{{ site_url }}/applications" class="btn btn-secondary">View Applications</a>
+</div>
+
+<h3>🎯 Goals for Next Week</h3>
+<ul>
+    <li>Apply to {{ recommended_applications }} new jobs</li>
+    <li>Update your profile with recent achievements</li>
+    <li>Connect with {{ recommended_connections }} new professionals</li>
+    <li>Follow up on {{ pending_followups }} pending applications</li>
+</ul>
+
+<p>Keep up the great work! Consistency is key to finding your dream job.</p>
+
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 

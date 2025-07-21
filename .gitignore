@@ -1,0 +1,617 @@
+# =============================================================================
+# Environment and Configuration Files
+# =============================================================================
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+*.env
+
+# =============================================================================
+# Python and Django
+# =============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# =============================================================================
+# Node.js and Next.js Frontend
+# =============================================================================
+
+# Dependencies
+Frontend/node_modules/
+Frontend/.pnp
+Frontend/.pnp.js
+
+# Testing
+Frontend/coverage/
+
+# Next.js
+Frontend/.next/
+Frontend/out/
+
+# Production
+Frontend/build/
+
+# Misc
+Frontend/.DS_Store
+Frontend/*.pem
+
+# Debug
+Frontend/npm-debug.log*
+Frontend/yarn-debug.log*
+Frontend/yarn-error.log*
+
+# Local env files
+Frontend/.env*.local
+Frontend/.env
+
+# Vercel
+Frontend/.vercel
+
+# TypeScript
+Frontend/*.tsbuildinfo
+Frontend/next-env.d.ts
+
+# Runtime data
+pids
+*.pid
+*.swo
+*~
+
+# =============================================================================
+# OS Files
+# =============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+*.lnk
+Desktop.ini
+.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# =============================================================================
+# IDE and Editor Files
+# =============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# PyCharm
+.idea/
+
+# =============================================================================
+# Docker Files
+# =============================================================================
+# .dockerignore
+
+# =============================================================================
+# Logs and Runtime Files
+# =============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# =============================================================================
+# Temporary Files
+# =============================================================================
+tmp/
+temp/
+.tmp/
+.temp/
+
+# =============================================================================
+# Certificates and Keys
+# =============================================================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# =============================================================================
+# Backup Files
+# =============================================================================
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+
+# =============================================================================
+# Render Deployment
+# =============================================================================
+.render/
+
+# =============================================================================
+# Machine Learning Models
+# =============================================================================
+models/
+*.model
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.onnx
+*.pb
+*.tflite
+
+# =============================================================================
+# Search Index Files
+# =============================================================================
+elasticsearch/
+whoosh_index/
+*.index
+
+# =============================================================================
+# Testing and Coverage
+# =============================================================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.cache
+
+# =============================================================================
+# Local Development
+# =============================================================================
+.local/
+local/
+localhost/
+
+# =============================================================================
+# Sentry
+# =============================================================================
+.sentryclirc
+
+# =============================================================================
+# Project Specific Exclusions
+# =============================================================================
+
+# Django media files
+media/
+Backend/media/
+staticfiles/
+Backend/staticfiles/
+
+# Django static files (if collected)
+Backend/static/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.pytest_cache/
+
+# Redis dump files
+dump.rdb
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Elasticsearch
+*.es
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Kubernetes
+*.yaml
+*.yml
+!k8s/*.yaml
+!k8s/*.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# =============================================================================
+# Security and Secrets
+# =============================================================================
+
+# API keys and secrets
+secrets.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# SSL certificates
+*.crt
+*.cert
+
+# =============================================================================
+# Testing and Coverage
+# =============================================================================
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Test results
+test-results/
+junit.xml
+
+# =============================================================================
+# Build and Deployment
+# =============================================================================
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Deployment
+deploy/
+deployment/
+
+# =============================================================================
+# Monitoring and Analytics
+# =============================================================================
+
+# Analytics
+analytics/
+metrics/
+
+# Monitoring
+monitoring/
+observability/
+
+# =============================================================================
+# Documentation
+# =============================================================================
+
+# Generated documentation
+docs/_build/
+docs/build/
+
+# API documentation
+api-docs/
+swagger/
+
+# =============================================================================
+# Development Tools
+# =============================================================================
+
+# Local development
+local/
+dev/
+
+# Development databases
+dev.db
+test.db
+
+# Development settings
+local_settings.py
+settings_local.py
+
+# =============================================================================
+# Microservices
+# =============================================================================
+
+# Microservices specific
+microservices/logs/
+microservices/tmp/
+microservices/.env*
+
+# =============================================================================
+# AI and ML Models
+# =============================================================================
+
+# Model files
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.model
+*.bin
+
+# AI/ML specific
+models/
+checkpoints/
+weights/
+
+# =============================================================================
+# Job Scraping and Data
+# =============================================================================
+
+# Scraped data
+scraped_data/
+job_data/
+*.csv
+*.json
+!package.json
+!package-lock.json
+!yarn.lock
+
+# =============================================================================
+# Notifications and WebSocket
+# =============================================================================
+
+# WebSocket logs
+websocket_logs/
+notification_logs/
+
+# =============================================================================
+# Resume and CV Processing
+# =============================================================================
+
+# Resume files
+resumes/
+cv_files/
+*.pdf
+*.doc
+*.docx
+
+# =============================================================================
+# Search and Indexing
+# =============================================================================
+
+# Search indices
+search_index/
+elasticsearch_data/
+*.index
+
+# =============================================================================
+# Email Templates
+# =============================================================================
+
+# Email templates (if generated)
+email_templates/
+generated_emails/
+
+# =============================================================================
+# User Uploads and Files
+# =============================================================================
+
+# User uploaded files
+user_uploads/
+profile_pictures/
+company_logos/
+job_attachments/
+
+# =============================================================================
+# Analytics and Reporting
+# =============================================================================
+
+# Analytics data
+analytics_data/
+reports/
+*.xlsx
+*.xls
+
+# =============================================================================
+# Backup and Archive
+# =============================================================================
+
+# Backup files
+backups/
+archives/
+*.tar
+*.gz
+*.bz2
+
+# =============================================================================
+# Development Scripts
+# =============================================================================
+
+# Development scripts (if they contain sensitive data)
+dev_scripts/
+debug_scripts/
+test_scripts/
+
+# =============================================================================
+# Performance and Optimization
+# =============================================================================
+
+# Performance monitoring
+performance_logs/
+optimization_data/
+
+# =============================================================================
+# Third-party Integrations
+# =============================================================================
+
+# Third-party API keys
+third_party_keys/
+integration_keys/
+
+# =============================================================================
+# Compliance and Legal
+# =============================================================================
+
+# Legal documents
+legal/
+compliance/
+*.legal
+*.compliance
+
+# =============================================================================
+# End of .gitignore
+# =============================================================================

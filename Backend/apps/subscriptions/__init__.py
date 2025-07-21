@@ -1,0 +1,1 @@
+# Subscriptions app for subscription management 

@@ -1,0 +1,62 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Complete Your Profile - Get Better Job Matches{% endblock %}
+
+{% block header_title %}Complete Your Profile{% endblock %}
+{% block header_subtitle %}Get {{ improvement_percentage }}% better job matches{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }}!</h2>
+
+<p>Your JobPilot profile is <strong>{{ completion_percentage }}% complete</strong>. By completing the remaining sections, you'll get {{ improvement_percentage }}% better job matches and more visibility to employers.</p>
+
+<div class="alert alert-info">
+    <strong>Current Profile Score:</strong> {{ completion_percentage }}%<br>
+    <strong>Missing Sections:</strong> {{ missing_sections|length }} of {{ total_sections }}
+</div>
+
+<h3>📝 Complete These Sections:</h3>
+<ul>
+    {% for section in missing_sections %}
+    <li><strong>{{ section.name }}:</strong> {{ section.description }}</li>
+    {% endfor %}
+</ul>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ site_url }}/profile" class="btn btn-primary" style="font-size: 18px; padding: 16px 32px;">
+        Complete Profile Now
+    </a>
+</div>
+
+<h3>🚀 Benefits of a Complete Profile:</h3>
+<ul>
+    <li><strong>{{ improvement_percentage }}% Better Matches:</strong> Our AI works better with more data about you</li>
+    <li><strong>Higher Visibility:</strong> Employers can find you more easily</li>
+    <li><strong>Personalized Recommendations:</strong> Get jobs tailored to your skills and interests</li>
+    <li><strong>Application Tracking:</strong> Keep track of all your applications in one place</li>
+</ul>
+
+{% if similar_users_stats %}
+<div class="alert alert-success">
+    <strong>📊 Did you know?</strong> Users with complete profiles get {{ similar_users_stats.more_interviews }}% more interview invitations and {{ similar_users_stats.more_applications }}% more applications compared to incomplete profiles.
+</div>
+{% endif %}
+
+<h3>💡 Quick Tips:</h3>
+<ul>
+    <li>Add a professional photo to increase profile views by 40%</li>
+    <li>List your top skills to get matched with relevant jobs</li>
+    <li>Write a compelling bio that highlights your unique value</li>
+    <li>Keep your contact information up to date</li>
+</ul>
+
+<p>It only takes 5 minutes to complete your profile, but the benefits last throughout your job search!</p>
+
+<a href="{{ site_url }}/profile" class="btn btn-primary">Complete Profile</a>
+<a href="{{ site_url }}/jobs" class="btn btn-secondary">Browse Jobs</a>
+
+<p>Need help? Check out our <a href="{{ site_url }}/help/profile">profile completion guide</a> or contact support at <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
+
+<p>Happy job hunting!</p>
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 

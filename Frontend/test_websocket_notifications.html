@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Notifications Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .connecting { background-color: #fff3cd; color: #856404; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        
+        .notifications {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .notification {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .notification-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .notification-time {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .notification-priority-high { border-left: 4px solid #dc3545; }
+        .notification-priority-medium { border-left: 4px solid #ffc107; }
+        .notification-priority-low { border-left: 4px solid #28a745; }
+        
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .log-error { color: #dc3545; }
+        .log-success { color: #28a745; }
+        .log-info { color: #007bff; }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Real-time Notifications Test</h1>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn" onclick="connectWebSocket()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnectWebSocket()" disabled>Disconnect</button>
+            <button id="testNotificationBtn" onclick="createTestNotification()" disabled>Create Test Notification</button>
+            <button id="markAllReadBtn" onclick="markAllAsRead()" disabled>Mark All Read</button>
+            <button id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="unreadCount">0</div>
+                <div class="stat-label">Unread</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalReceived">0</div>
+                <div class="stat-label">Received</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="connectionTime">0</div>
+                <div class="stat-label">Connected (s)</div>
+            </div>
+        </div>
+        
+        <h3>📨 Notifications</h3>
+        <div id="notifications" class="notifications">
+            <p style="color: #6c757d; text-align: center;">No notifications yet</p>
+        </div>
+        
+        <h3>📋 Connection Log</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let connectionStartTime = null;
+        let connectionTimer = null;
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 5;
+        let notifications = [];
+        let unreadCount = 0;
+        let totalReceived = 0;
+
+        function updateStatus(status, message) {
+            const statusElement = document.getElementById('status');
+            statusElement.className = `status ${status}`;
+            statusElement.textContent = `Status: ${message}`;
+        }
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('unreadCount').textContent = unreadCount;
+            document.getElementById('totalReceived').textContent = totalReceived;
+        }
+
+        function updateConnectionTime() {
+            if (connectionStartTime) {
+                const elapsed = Math.floor((Date.now() - connectionStartTime) / 1000);
+                document.getElementById('connectionTime').textContent = elapsed;
+            }
+        }
+
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected!', 'error');
+                return;
+            }
+
+            updateStatus('connecting', 'Connecting...');
+            log('Attempting to connect to WebSocket...');
+
+            // Change this URL to match your backend
+            const wsUrl = 'ws://localhost:8000/ws/notifications/';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                updateStatus('connected', 'Connected');
+                log('WebSocket connected successfully!', 'success');
+                connectionStartTime = Date.now();
+                reconnectAttempts = 0;
+                
+                // Start connection timer
+                connectionTimer = setInterval(updateConnectionTime, 1000);
+                
+                // Enable/disable buttons
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('testNotificationBtn').disabled = false;
+                document.getElementById('markAllReadBtn').disabled = false;
+                
+                // Send heartbeat every 30 seconds
+                setInterval(sendHeartbeat, 30000);
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    log(`Error parsing message: ${error.message}`, 'error');
+                }
+            };
+
+            ws.onclose = function(event) {
+                updateStatus('disconnected', 'Disconnected');
+                log(`WebSocket disconnected (code: ${event.code})`, 'error');
+                
+                connectionStartTime = null;
+                if (connectionTimer) {
+                    clearInterval(connectionTimer);
+                    connectionTimer = null;
+                }
+                
+                // Enable/disable buttons
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('testNotificationBtn').disabled = true;
+                document.getElementById('markAllReadBtn').disabled = true;
+                
+                // Auto-reconnect if not manually disconnected
+                if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    log(`Reconnecting in 5 seconds... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                    setTimeout(connectWebSocket, 5000);
+                }
+            };
+
+            ws.onerror = function(error) {
+                log(`WebSocket error: ${error.message || 'Unknown error'}`, 'error');
+                updateStatus('error', 'Connection Error');
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close(1000); // Normal closure
+            }
+        }
+
+        function sendHeartbeat() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'heartbeat' }));
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            log(`Received: ${data.type}`, 'info');
+            
+            switch (data.type) {
+                case 'initial_data':
+                    notifications = data.notifications || [];
+                    unreadCount = data.unread_count || 0;
+                    totalReceived = notifications.length;
+                    updateStats();
+                    renderNotifications();
+                    log(`Loaded ${notifications.length} notifications`, 'success');
+                    break;
+                    
+                case 'notification':
+                    const notification = data.data;
+                    notifications.unshift(notification);
+                    unreadCount++;
+                    totalReceived++;
+                    updateStats();
+                    renderNotifications();
+                    log(`New notification: ${notification.title}`, 'success');
+                    
+                    // Show browser notification
+                    if (Notification.permission === 'granted') {
+                        new Notification(notification.title, {
+                            body: notification.message,
+                            icon: '/favicon.ico'
+                        });
+                    }
+                    break;
+                    
+                case 'unread_count_update':
+                    unreadCount = data.count;
+                    updateStats();
+                    break;
+                    
+                case 'heartbeat_ack':
+                    log('Heartbeat acknowledged', 'info');
+                    break;
+                    
+                case 'error':
+                    log(`Server error: ${data.message}`, 'error');
+                    break;
+                    
+                default:
+                    log(`Unknown message type: ${data.type}`, 'error');
+            }
+        }
+
+        function renderNotifications() {
+            const container = document.getElementById('notifications');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<p style="color: #6c757d; text-align: center;">No notifications yet</p>';
+                return;
+            }
+            
+            container.innerHTML = notifications.map(notification => `
+                <div class="notification notification-priority-${notification.priority}" 
+                     data-id="${notification.id}">
+                    <div class="notification-header">
+                        ${notification.title}
+                        ${!notification.is_read ? '<span style="color: #007bff;">●</span>' : ''}
+                    </div>
+                    <div>${notification.message}</div>
+                    <div class="notification-time">
+                        ${new Date(notification.created_at).toLocaleString()}
+                        ${notification.action_url ? `<a href="${notification.action_url}">${notification.action_label || 'View'}</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function createTestNotification() {
+            // This would typically be done via an API call to your backend
+            // For testing, we'll simulate it by sending a message to the WebSocket
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                // In a real app, you'd call your backend API to create the notification
+                log('Test notification creation would be handled by backend API', 'info');
+                
+                // For demo purposes, you can manually create a notification via Django admin
+                // or use the test script provided
+                alert('To create a test notification, use the Django admin interface or run the test script');
+            }
+        }
+
+        function markAllAsRead() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'mark_all_read' }));
+                log('Marked all notifications as read', 'success');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Request notification permission on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        log('Browser notifications enabled', 'success');
+                    } else {
+                        log('Browser notifications denied', 'error');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

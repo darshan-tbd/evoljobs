@@ -1,0 +1,73 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Application Submitted - {{ job.title }}{% endblock %}
+
+{% block header_title %}Application Submitted!{% endblock %}
+{% block header_subtitle %}Your application has been sent to {{ job.company.name }}{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }}!</h2>
+
+<p>Great news! Your application for <strong>{{ job.title }}</strong> at <strong>{{ job.company.name }}</strong> has been successfully submitted.</p>
+
+<div class="alert alert-success">
+    <strong>Application Status:</strong> Submitted<br>
+    <strong>Application ID:</strong> {{ application.id }}<br>
+    <strong>Submitted:</strong> {{ application.submitted_at|date:"F j, Y \a\t g:i A" }}
+</div>
+
+<div class="job-card">
+    <h4>{{ job.title }}</h4>
+    <div class="company">{{ job.company.name }}</div>
+    
+    <div class="details">
+        {% if job.location %}📍 {{ job.location.name }}{% endif %}
+        {% if job.job_type %} • 💼 {{ job.get_job_type_display }}{% endif %}
+        {% if job.experience_level %} • 📈 {{ job.get_experience_level_display }}{% endif %}
+        {% if job.remote_option %} • 🏠 {{ job.get_remote_option_display }}{% endif %}
+    </div>
+    
+    {% if job.salary_display %}
+    <div class="details">💰 {{ job.salary_display }}</div>
+    {% endif %}
+    
+    {% if application.match_score %}
+    <div style="margin-top: 12px;">
+        <span class="match-score">{{ application.match_score }}% Match</span>
+    </div>
+    {% endif %}
+</div>
+
+<h3>📋 Application Details</h3>
+<ul>
+    <li><strong>Resume:</strong> {{ application.resume_file_name|default:"Uploaded from profile" }}</li>
+    <li><strong>Cover Letter:</strong> {% if application.cover_letter %}Included{% else %}Not included{% endif %}</li>
+    <li><strong>Status:</strong> {{ application.get_status_display }}</li>
+    {% if application.expected_salary %}
+    <li><strong>Expected Salary:</strong> ${{ application.expected_salary|floatformat:0 }}</li>
+    {% endif %}
+</ul>
+
+<h3>🎯 What's Next?</h3>
+<p>Here's what you can expect:</p>
+<ul>
+    <li>The employer will review your application</li>
+    <li>You'll receive updates via email about any status changes</li>
+    <li>Average response time: {{ job.company.avg_response_time|default:"5-10 business days" }}</li>
+    <li>Keep applying to other opportunities while you wait</li>
+</ul>
+
+<div class="alert alert-info">
+    <strong>💡 Pro Tip:</strong> Follow up with the employer after 1-2 weeks if you haven't heard back. 
+    You can also connect with the hiring team on LinkedIn to show your interest.
+</div>
+
+<a href="{{ site_url }}/applications" class="btn btn-primary">View All Applications</a>
+<a href="{{ site_url }}/jobs" class="btn btn-secondary">Find More Jobs</a>
+
+<h3>📊 Application Tracking</h3>
+<p>You can track the status of this and all your applications in your <a href="{{ site_url }}/applications">application dashboard</a>. We'll notify you of any updates.</p>
+
+<p>Good luck with your application!</p>
+<p><strong>The JobPilot Team</strong></p>
+{% endblock %} 
