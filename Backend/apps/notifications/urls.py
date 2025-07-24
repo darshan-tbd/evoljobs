@@ -5,11 +5,23 @@ from . import views
 router = DefaultRouter()
 router.register(r'', views.NotificationViewSet, basename='notification')
 router.register(r'preferences', views.NotificationPreferenceViewSet, basename='notification-preference')
+router.register(r'templates', views.NotificationTemplateViewSet, basename='notification-template')
+router.register(r'channels', views.NotificationChannelViewSet, basename='notification-channel')
+router.register(r'delivery', views.NotificationDeliveryViewSet, basename='notification-delivery')
+
+# Admin router
+admin_router = DefaultRouter()
+admin_router.register(r'admin-notifications', views.AdminNotificationViewSet, basename='adminnotification')
+admin_router.register(r'admin-preferences', views.AdminNotificationPreferenceViewSet, basename='adminnotificationpreference')
+admin_router.register(r'admin-templates', views.AdminNotificationTemplateViewSet, basename='adminnotificationtemplate')
+admin_router.register(r'admin-channels', views.AdminNotificationChannelViewSet, basename='adminnotificationchannel')
+admin_router.register(r'admin-delivery', views.AdminNotificationDeliveryViewSet, basename='adminnotificationdelivery')
 
 app_name = 'notifications'
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include(admin_router.urls)),
     
     # Real-time notification endpoints
     # GET /api/v1/notifications/ - List notifications

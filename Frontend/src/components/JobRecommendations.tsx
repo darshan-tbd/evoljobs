@@ -46,6 +46,7 @@ interface JobRecommendation {
   experience_level: string;
   remote_option: string;
   salary_display?: string;
+  external_url?: string;
   required_skills?: Array<{
     id: string;
     name: string;

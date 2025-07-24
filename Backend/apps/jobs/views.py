@@ -1,22 +1,33 @@
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q, Count, Avg, Min, Max
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from datetime import timedelta
 from .models import JobPosting, JobView, SavedJob, JobAlert
 from .serializers import JobPostingSerializer, JobPostingListSerializer, JobViewSerializer, SavedJobSerializer, JobAlertSerializer
+from .serializers import AdminJobPostingSerializer, AdminJobViewSerializer, AdminSavedJobSerializer, AdminJobAlertSerializer
 from apps.ai.services import job_matching_service
 import logging
 
 logger = logging.getLogger(__name__)
+
+class JobPagination(PageNumberPagination):
+    """
+    Custom pagination class for jobs
+    """
+    page_size = 9
+    page_size_query_param = 'page_size'
+    max_page_size = 50
 
 class JobPostingViewSet(viewsets.ModelViewSet):
     queryset = JobPosting.objects.filter(status='active', is_deleted=False).select_related('company', 'location', 'industry').prefetch_related('required_skills', 'preferred_skills')
     serializer_class = JobPostingSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     lookup_field = 'slug'
+    pagination_class = JobPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['job_type', 'experience_level', 'remote_option', 'company', 'industry', 'status']
     search_fields = ['title', 'description', 'company__name', 'location__name', 'location__city', 'location__state', 'location__country', 'required_skills__name', 'industry__name']
@@ -47,26 +58,13 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         return JobPostingSerializer
     
     def get_queryset_with_filters(self):
+        """
+        Apply additional filters to the queryset
+        """
         queryset = self.get_queryset()
         query_params = self.request.query_params
         
-        # Enhanced keyword search
-        q = query_params.get('q', None)
-        if q:
-            queryset = queryset.filter(
-                Q(title__icontains=q) |
-                Q(description__icontains=q) |
-                Q(company__name__icontains=q) |
-                Q(required_skills__name__icontains=q) |
-                Q(preferred_skills__name__icontains=q) |
-                Q(industry__name__icontains=q) |
-                Q(location__name__icontains=q) |
-                Q(location__city__icontains=q) |
-                Q(location__state__icontains=q) |
-                Q(location__country__icontains=q)
-            ).distinct()
-        
-        # Enhanced location filter
+        # Location filter
         location = query_params.get('location', None)
         if location:
             queryset = queryset.filter(
@@ -76,69 +74,47 @@ class JobPostingViewSet(viewsets.ModelViewSet):
                 Q(location__country__icontains=location)
             )
         
-        # Enhanced salary range filter
-        salary_min = query_params.get('salary_min', None)
-        salary_max = query_params.get('salary_max', None)
-        if salary_min:
-            queryset = queryset.filter(
-                Q(salary_min__gte=salary_min) | Q(salary_min__isnull=True)
-            )
-        if salary_max:
-            queryset = queryset.filter(
-                Q(salary_max__lte=salary_max) | Q(salary_max__isnull=True)
-            )
+        # Salary range filter
+        min_salary = query_params.get('min_salary', None)
+        max_salary = query_params.get('max_salary', None)
+        if min_salary:
+            queryset = queryset.filter(salary_min__gte=min_salary)
+        if max_salary:
+            queryset = queryset.filter(salary_max__lte=max_salary)
         
-        # Skills filter (multiple skills)
+        # Skills filter
         skills = query_params.get('skills', None)
         if skills:
-            skill_list = skills.split(',')
+            skill_list = [skill.strip() for skill in skills.split(',')]
             queryset = queryset.filter(
                 Q(required_skills__name__in=skill_list) |
                 Q(preferred_skills__name__in=skill_list)
             ).distinct()
         
-        # Date posted filter
-        date_posted = query_params.get('date_posted', None)
-        if date_posted:
-            now = timezone.now()
-            if date_posted == 'today':
-                queryset = queryset.filter(created_at__date=now.date())
-            elif date_posted == 'week':
-                queryset = queryset.filter(created_at__gte=now - timedelta(days=7))
-            elif date_posted == 'month':
-                queryset = queryset.filter(created_at__gte=now - timedelta(days=30))
-            elif date_posted == 'quarter':
-                queryset = queryset.filter(created_at__gte=now - timedelta(days=90))
+        # Company filter
+        company = query_params.get('company', None)
+        if company:
+            queryset = queryset.filter(company__name__icontains=company)
         
-        # Company filter (multiple companies)
-        companies = query_params.get('companies', None)
-        if companies:
-            company_list = companies.split(',')
-            queryset = queryset.filter(company__name__in=company_list)
+        # Industry filter
+        industry = query_params.get('industry', None)
+        if industry:
+            queryset = queryset.filter(industry__name__icontains=industry)
         
-        # Industry filter (multiple industries)
-        industries = query_params.get('industries', None)
-        if industries:
-            industry_list = industries.split(',')
-            queryset = queryset.filter(industry__name__in=industry_list)
+        # Job type filter
+        job_type = query_params.get('job_type', None)
+        if job_type:
+            queryset = queryset.filter(job_type=job_type)
         
-        # Job type filter (multiple types)
-        job_types = query_params.get('job_types', None)
-        if job_types:
-            job_type_list = job_types.split(',')
-            queryset = queryset.filter(job_type__in=job_type_list)
+        # Experience level filter
+        experience_level = query_params.get('experience_level', None)
+        if experience_level:
+            queryset = queryset.filter(experience_level=experience_level)
         
-        # Experience level filter (multiple levels)
-        experience_levels = query_params.get('experience_levels', None)
-        if experience_levels:
-            experience_level_list = experience_levels.split(',')
-            queryset = queryset.filter(experience_level__in=experience_level_list)
-        
-        # Remote option filter (multiple options)
-        remote_options = query_params.get('remote_options', None)
-        if remote_options:
-            remote_option_list = remote_options.split(',')
-            queryset = queryset.filter(remote_option__in=remote_option_list)
+        # Remote option filter
+        remote_option = query_params.get('remote_option', None)
+        if remote_option:
+            queryset = queryset.filter(remote_option=remote_option)
         
         # Featured jobs filter
         featured_only = query_params.get('featured_only', None)
@@ -224,164 +200,11 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(job)
         return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def search(self, request):
-        """
-        Enhanced search endpoint with faceted filtering
-        GET /api/v1/jobs/search/?q=python&location=new+york&job_type=full_time
-        """
-        queryset = self.get_queryset_with_filters()
-        
-        # Apply pagination
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            'results': serializer.data,
-            'count': queryset.count()
-        })
-    
-    @action(detail=False, methods=['get'])
-    def facets(self, request):
-        """
-        Get faceted search data for filters
-        GET /api/v1/jobs/facets/
-        """
-        queryset = self.get_queryset_with_filters()
-        
-        # Get all available filter options with counts
-        facets = {
-            'job_types': list(queryset.values('job_type').annotate(count=Count('id')).order_by('-count')),
-            'experience_levels': list(queryset.values('experience_level').annotate(count=Count('id')).order_by('-count')),
-            'remote_options': list(queryset.values('remote_option').annotate(count=Count('id')).order_by('-count')),
-            'companies': list(queryset.values('company__name').annotate(count=Count('id')).order_by('-count')[:20]),
-            'industries': list(queryset.values('industry__name').annotate(count=Count('id')).order_by('-count')),
-            'locations': list(queryset.values('location__name', 'location__city', 'location__state', 'location__country').annotate(count=Count('id')).order_by('-count')[:20]),
-            'skills': list(queryset.values('required_skills__name').annotate(count=Count('id')).order_by('-count')[:30]),
-            'salary_stats': queryset.aggregate(
-                min_salary=Min('salary_min'),
-                max_salary=Max('salary_max'),
-                avg_salary=Avg('salary_min')
-            )
-        }
-        
-        return Response(facets)
-    
-    @action(detail=False, methods=['get'])
-    def trending(self, request):
-        """
-        Get trending jobs (most viewed/applied)
-        GET /api/v1/jobs/trending/
-        """
-        queryset = self.get_queryset()
-        
-        # Get trending jobs by views and applications
-        trending_jobs = queryset.filter(
-            created_at__gte=timezone.now() - timedelta(days=7)
-        ).order_by('-views_count', '-applications_count')[:10]
-        
-        serializer = self.get_serializer(trending_jobs, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def recent(self, request):
-        """
-        Get recently posted jobs
-        GET /api/v1/jobs/recent/
-        """
-        queryset = self.get_queryset()
-        
-        # Get recent jobs (last 24 hours)
-        recent_jobs = queryset.filter(
-            created_at__gte=timezone.now() - timedelta(hours=24)
-        ).order_by('-created_at')[:20]
-        
-        serializer = self.get_serializer(recent_jobs, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def similar(self, request):
-        """
-        Get similar jobs based on skills and industry
-        GET /api/v1/jobs/similar/?job_id=123
-        """
-        job_id = request.query_params.get('job_id')
-        if not job_id:
-            return Response({'error': 'job_id parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            job = JobPosting.objects.get(id=job_id)
-            queryset = self.get_queryset().exclude(id=job_id)
-            
-            # Find similar jobs based on skills and industry
-            similar_jobs = queryset.filter(
-                Q(required_skills__in=job.required_skills.all()) |
-                Q(preferred_skills__in=job.preferred_skills.all()) |
-                Q(industry=job.industry)
-            ).distinct().order_by('-created_at')[:10]
-            
-            serializer = self.get_serializer(similar_jobs, many=True)
-            return Response(serializer.data)
-            
-        except JobPosting.DoesNotExist:
-            return Response({'error': 'Job not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=False, methods=['get'])
-    def recommended(self, request):
-        """
-        Get recommended jobs for the current user based on their profile
-        GET /api/v1/jobs/recommended/ or /api/recommended-jobs/
-        """
-        if not request.user.is_authenticated:
-            return Response({
-                'error': 'Authentication required'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-        
-        # Get limit parameter
-        limit = int(request.query_params.get('limit', 10))
-        limit = min(limit, 50)  # Cap at 50 jobs
-        
-        try:
-            # Use existing job matching service
-            recommended_jobs = job_matching_service.get_recommended_jobs(request.user, limit)
-            
-            if not recommended_jobs:
-                return Response({
-                    'success': True,
-                    'results': [],
-                    'count': 0,
-                    'message': 'No recommendations found. Complete your profile for better matches.'
-                })
-            
-            # Format results for frontend
-            results = []
-            for item in recommended_jobs:
-                job_data = JobPostingListSerializer(item['job']).data
-                job_data['match_score'] = round(item['match_score'], 1)
-                job_data['match_breakdown'] = item['match_breakdown']
-                job_data['match_explanation'] = job_matching_service.get_match_explanation(
-                    request.user, item['job']
-                )
-                results.append(job_data)
-            
-            return Response({
-                'success': True,
-                'results': results,
-                'count': len(results),
-                'message': f'Found {len(results)} recommended jobs'
-            })
-            
-        except Exception as e:
-            logger.error(f"Error getting job recommendations: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Failed to get job recommendations',
-                'message': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class JobViewViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = JobView.objects.all()
+    serializer_class = JobViewSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 class SavedJobViewSet(viewsets.ModelViewSet):
     serializer_class = SavedJobSerializer
@@ -459,3 +282,224 @@ class JobAlertViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user) 
+
+class AdminJobPostingViewSet(viewsets.ModelViewSet):
+    """
+    Admin viewset for managing all job postings
+    """
+    serializer_class = AdminJobPostingSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = JobPosting.objects.all()
+    lookup_field = 'slug'
+    pagination_class = JobPagination
+    
+    def get_queryset(self):
+        queryset = JobPosting.objects.all().select_related('company', 'location', 'industry', 'posted_by').prefetch_related('required_skills', 'preferred_skills')
+        
+        # Search functionality
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(company__name__icontains=search) |
+                Q(location__name__icontains=search)
+            )
+        
+        # Filter by status
+        status_filter = self.request.query_params.get('status', None)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        # Filter by featured status
+        featured = self.request.query_params.get('featured', None)
+        if featured is not None:
+            if featured.lower() == 'true':
+                queryset = queryset.filter(is_featured=True)
+            elif featured.lower() == 'false':
+                queryset = queryset.filter(is_featured=False)
+        
+        # Filter by company
+        company = self.request.query_params.get('company', None)
+        if company:
+            queryset = queryset.filter(company_id=company)
+        
+        # Filter by job type
+        job_type = self.request.query_params.get('job_type', None)
+        if job_type:
+            queryset = queryset.filter(job_type=job_type)
+        
+        # Filter by experience level
+        experience_level = self.request.query_params.get('experience_level', None)
+        if experience_level:
+            queryset = queryset.filter(experience_level=experience_level)
+        
+        # Filter by remote option
+        remote_option = self.request.query_params.get('remote_option', None)
+        if remote_option:
+            queryset = queryset.filter(remote_option=remote_option)
+        
+        return queryset.order_by('-created_at')
+    
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, slug=None):
+        """Update job status"""
+        job = self.get_object()
+        new_status = request.data.get('status')
+        
+        if new_status not in dict(JobPosting.STATUS_CHOICES):
+            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        job.status = new_status
+        job.save()
+        
+        serializer = self.get_serializer(job)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'])
+    def toggle_featured(self, request, slug=None):
+        """Toggle featured status"""
+        job = self.get_object()
+        job.is_featured = not job.is_featured
+        job.save()
+        
+        serializer = self.get_serializer(job)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Get job statistics"""
+        total_jobs = JobPosting.objects.count()
+        active_jobs = JobPosting.objects.filter(status='active').count()
+        draft_jobs = JobPosting.objects.filter(status='draft').count()
+        closed_jobs = JobPosting.objects.filter(status='closed').count()
+        featured_jobs = JobPosting.objects.filter(is_featured=True).count()
+        
+        # Job types
+        full_time_jobs = JobPosting.objects.filter(job_type='full_time').count()
+        part_time_jobs = JobPosting.objects.filter(job_type='part_time').count()
+        contract_jobs = JobPosting.objects.filter(job_type='contract').count()
+        internship_jobs = JobPosting.objects.filter(job_type='internship').count()
+        
+        # Experience levels
+        entry_jobs = JobPosting.objects.filter(experience_level='entry').count()
+        mid_jobs = JobPosting.objects.filter(experience_level='mid').count()
+        senior_jobs = JobPosting.objects.filter(experience_level='senior').count()
+        executive_jobs = JobPosting.objects.filter(experience_level='executive').count()
+        
+        # Recent activity
+        today = timezone.now().date()
+        week_ago = today - timedelta(days=7)
+        month_ago = today - timedelta(days=30)
+        
+        new_jobs_today = JobPosting.objects.filter(created_at__date=today).count()
+        new_jobs_this_week = JobPosting.objects.filter(created_at__date__gte=week_ago).count()
+        new_jobs_this_month = JobPosting.objects.filter(created_at__date__gte=month_ago).count()
+        
+        return Response({
+            'total_jobs': total_jobs,
+            'active_jobs': active_jobs,
+            'draft_jobs': draft_jobs,
+            'closed_jobs': closed_jobs,
+            'featured_jobs': featured_jobs,
+            'job_types': {
+                'full_time': full_time_jobs,
+                'part_time': part_time_jobs,
+                'contract': contract_jobs,
+                'internship': internship_jobs,
+            },
+            'experience_levels': {
+                'entry': entry_jobs,
+                'mid': mid_jobs,
+                'senior': senior_jobs,
+                'executive': executive_jobs,
+            },
+            'recent_activity': {
+                'new_jobs_today': new_jobs_today,
+                'new_jobs_this_week': new_jobs_this_week,
+                'new_jobs_this_month': new_jobs_this_month,
+            }
+        })
+    
+    @action(detail=False, methods=['get'])
+    def recent_activity(self, request):
+        """Get recent job activity"""
+        limit = int(request.query_params.get('limit', 10))
+        
+        recent_jobs = JobPosting.objects.order_by('-created_at')[:limit]
+        
+        return Response({
+            'recent_jobs': AdminJobPostingSerializer(recent_jobs, many=True).data,
+        })
+
+class AdminJobViewViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Admin viewset for job views
+    """
+    serializer_class = AdminJobViewSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = JobView.objects.all()
+    
+    def get_queryset(self):
+        queryset = JobView.objects.all().select_related('job', 'user')
+        
+        # Filter by job
+        job = self.request.query_params.get('job', None)
+        if job:
+            queryset = queryset.filter(job_id=job)
+        
+        # Filter by user
+        user = self.request.query_params.get('user', None)
+        if user:
+            queryset = queryset.filter(user_id=user)
+        
+        return queryset.order_by('-created_at')
+
+class AdminSavedJobViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Admin viewset for saved jobs
+    """
+    serializer_class = AdminSavedJobSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = SavedJob.objects.all()
+    
+    def get_queryset(self):
+        queryset = SavedJob.objects.all().select_related('job', 'user')
+        
+        # Filter by job
+        job = self.request.query_params.get('job', None)
+        if job:
+            queryset = queryset.filter(job_id=job)
+        
+        # Filter by user
+        user = self.request.query_params.get('user', None)
+        if user:
+            queryset = queryset.filter(user_id=user)
+        
+        return queryset.order_by('-created_at')
+
+class AdminJobAlertViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Admin viewset for job alerts
+    """
+    serializer_class = AdminJobAlertSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = JobAlert.objects.all()
+    
+    def get_queryset(self):
+        queryset = JobAlert.objects.all().select_related('user', 'location')
+        
+        # Filter by user
+        user = self.request.query_params.get('user', None)
+        if user:
+            queryset = queryset.filter(user_id=user)
+        
+        # Filter by active status
+        active = self.request.query_params.get('active', None)
+        if active is not None:
+            if active.lower() == 'true':
+                queryset = queryset.filter(is_active=True)
+            elif active.lower() == 'false':
+                queryset = queryset.filter(is_active=False)
+        
+        return queryset.order_by('-created_at') 

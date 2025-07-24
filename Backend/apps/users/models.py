@@ -114,9 +114,27 @@ class UserProfile(BaseModel):
     expected_salary_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     expected_salary_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
-    # Resume
-    resume = models.FileField(upload_to='resumes/', blank=True, null=True)
+    # Resume - Reference to primary resume from Resume model
+    resume = models.FileField(upload_to='resumes/', blank=True, null=True, help_text="Legacy field - use Resume model instead")
     resume_text = models.TextField(blank=True)  # Extracted text from resume
+    
+    @property
+    def primary_resume(self):
+        """Get the primary resume from the Resume model"""
+        try:
+            from apps.resumes.models import Resume
+            return Resume.objects.filter(user=self.user, is_primary=True).first()
+        except:
+            return None
+    
+    @property
+    def all_resumes(self):
+        """Get all resumes from the Resume model"""
+        try:
+            from apps.resumes.models import Resume
+            return Resume.objects.filter(user=self.user).order_by('-created_at')
+        except:
+            return []
     
     # Skills
     skills = models.ManyToManyField(Skill, blank=True)

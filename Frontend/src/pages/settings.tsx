@@ -37,7 +37,7 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
-import Layout from '../components/Layout';
+import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const SettingsPage: React.FC = () => {

@@ -147,7 +147,8 @@ const FeaturedJobs: React.FC = () => {
   const handleApplyJob = (jobId: string) => {
     // For featured jobs (mock data), redirect to job details page
     // In a real implementation, this would check for external application URLs
-    router.push(`/jobs`);
+    // and redirect to the appropriate application form
+    router.push(`/jobs/${jobId}/apply`);
   };
 
   const handleViewAllJobs = () => {

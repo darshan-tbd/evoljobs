@@ -1,439 +1,398 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
-  Button,
-  Alert,
-  LinearProgress,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  IconButton,
-  Paper,
-  Tabs,
-  Tab,
-  Avatar,
-  Skeleton,
-} from '@mui/material';
-import {
-  Work as WorkIcon,
-  Business as BusinessIcon,
-  LocationOn as LocationIcon,
-  AccessTime as TimeIcon,
-  AttachMoney as SalaryIcon,
-  Assessment as AssessmentIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  Cancel as CancelIcon,
-  Visibility as VisibilityIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../hooks/useAuth';
-import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
+import { useAuth } from '@/hooks/useAuth';
+import { motion } from 'framer-motion';
+import { 
+  DocumentTextIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  EyeIcon,
+  BuildingOfficeIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  CalendarIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
+import Layout from '@/components/layout/Layout';
 
 interface Application {
-  id: number;
+  id: string;
   job: {
-    id: number;
+    id: string;
     title: string;
-    slug: string;
     company: {
       name: string;
+      logo?: string;
     };
-    location?: {
+    location: {
       name: string;
     };
     salary_min?: number;
     salary_max?: number;
-    salary_currency: string;
+    job_type: string;
   };
-  status: string;
-  cover_letter: string;
-  expected_salary?: number;
-  availability_date?: string;
+  status: 'pending' | 'reviewing' | 'accepted' | 'rejected' | 'withdrawn';
   applied_at: string;
-  reviewed_at?: string;
-  employer_notes?: string;
+  updated_at: string;
+  cover_letter?: string;
+  resume_url?: string;
 }
 
 const ApplicationsPage: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedTab, setSelectedTab] = useState(0);
-
-  const statusColors = {
-    pending: 'warning',
-    reviewing: 'info',
-    shortlisted: 'primary',
-    interviewed: 'secondary',
-    offered: 'success',
-    hired: 'success',
-    rejected: 'error',
-    withdrawn: 'default',
-  } as const;
-
-  const statusIcons = {
-    pending: <ScheduleIcon />,
-    reviewing: <AssessmentIcon />,
-    shortlisted: <CheckCircleIcon />,
-    interviewed: <CheckCircleIcon />,
-    offered: <CheckCircleIcon />,
-    hired: <CheckCircleIcon />,
-    rejected: <CancelIcon />,
-    withdrawn: <CancelIcon />,
-  };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState('applied_at');
 
   useEffect(() => {
-    fetchApplications();
-  }, []);
+    if (isAuthenticated) {
+      fetchApplications();
+    }
+  }, [isAuthenticated]);
 
   const fetchApplications = async () => {
     try {
       setLoading(true);
       setError('');
       
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setError('Please log in to view your applications');
-        return;
-      }
-
       const response = await fetch('http://127.0.0.1:8000/api/v1/applications/applications/', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Your session has expired. Please log in again.');
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          router.push('/login');
-          return;
-        }
-        throw new Error('Failed to fetch applications');
+      if (response.ok) {
+        const data = await response.json();
+        const applications = data.results || [];
+        
+        // Transform the data to match our interface
+        const transformedApplications = applications.map((app: any) => ({
+          id: app.id,
+          job: {
+            id: app.job?.id || 'unknown',
+            title: app.job?.title || 'Unknown Job',
+            company: { 
+              name: app.job?.company?.name || 'Unknown Company',
+              logo: app.job?.company?.logo || '/api/placeholder/40/40'
+            },
+            location: { 
+              name: app.job?.location?.name || 'Unknown Location'
+            },
+            salary_min: app.job?.salary_min,
+            salary_max: app.job?.salary_max,
+            job_type: app.job?.job_type || 'full_time'
+          },
+          status: app.status || 'pending',
+          applied_at: app.applied_at,
+          updated_at: app.updated_at || app.applied_at,
+          cover_letter: app.cover_letter,
+          resume_url: app.resume_url
+        }));
+        
+        setApplications(transformedApplications);
+      } else {
+        setError('Failed to load applications');
       }
-
-      const data = await response.json();
-      setApplications(data.results || data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load applications');
-      console.error('Error fetching applications:', err);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      setError('Failed to load applications');
     } finally {
       setLoading(false);
     }
   };
 
-  const getFilteredApplications = () => {
-    switch (selectedTab) {
-      case 0: // All
-        return applications;
-      case 1: // Active
-        return applications.filter(app => 
-          ['pending', 'reviewing', 'shortlisted', 'interviewed'].includes(app.status)
-        );
-      case 2: // Completed
-        return applications.filter(app => 
-          ['hired', 'rejected', 'withdrawn'].includes(app.status)
-        );
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'reviewing':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'withdrawn':
+        return 'bg-gray-100 text-gray-800';
       default:
-        return applications;
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return <CheckCircleIcon className="h-4 w-4" />;
+      case 'rejected':
+        return <XCircleIcon className="h-4 w-4" />;
+      case 'reviewing':
+        return <EyeIcon className="h-4 w-4" />;
+      case 'pending':
+        return <ClockIcon className="h-4 w-4" />;
+      default:
+        return <ClockIcon className="h-4 w-4" />;
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
+      year: 'numeric'
     });
   };
 
-  const formatSalary = (min?: number, max?: number, currency = 'USD') => {
-    if (!min && !max) return 'Not specified';
-    
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-    
-    if (min && max) {
-      return `${formatter.format(min)} - ${formatter.format(max)}`;
-    } else if (min) {
-      return `From ${formatter.format(min)}`;
-    } else {
-      return `Up to ${formatter.format(max!)}`;
+  const formatSalary = (min?: number, max?: number) => {
+    if (!min && !max) return 'Salary not specified';
+    if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
+    if (min) return `$${min.toLocaleString()}+`;
+    if (max) return `Up to $${max.toLocaleString()}`;
+    return 'Salary not specified';
+  };
+
+  const filteredApplications = applications.filter(app => {
+    const matchesSearch = app.job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         app.job.company.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = !statusFilter || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const sortedApplications = [...filteredApplications].sort((a, b) => {
+    switch (sortBy) {
+      case 'applied_at':
+        return new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime();
+      case 'updated_at':
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      case 'status':
+        return a.status.localeCompare(b.status);
+      default:
+        return 0;
     }
-  };
+  });
 
-  const getStatusProgress = (status: string) => {
-    const statusOrder = ['pending', 'reviewing', 'shortlisted', 'interviewed', 'offered', 'hired'];
-    const currentIndex = statusOrder.indexOf(status);
-    return currentIndex >= 0 ? ((currentIndex + 1) / statusOrder.length) * 100 : 0;
-  };
-
-  const withdrawApplication = async (applicationId: number) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/applications/applications/${applicationId}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'withdrawn' }),
-      });
-
-      if (response.ok) {
-        fetchApplications(); // Refresh the list
-      }
-    } catch (error) {
-      console.error('Error withdrawing application:', error);
-    }
-  };
+  if (!isAuthenticated) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+            <p className="text-gray-600 mb-6">Please log in to view your applications.</p>
+            <button
+              onClick={() => router.push('/login')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
       <Layout>
-        <ProtectedRoute>
-          <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Box sx={{ mb: 4 }}>
-              <Skeleton variant="text" width={300} height={40} />
-              <Skeleton variant="text" width={500} height={25} />
-            </Box>
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} variant="rectangular" height={200} sx={{ mb: 2 }} />
-            ))}
-          </Container>
-        </ProtectedRoute>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading applications...</p>
+          </div>
+        </div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <ProtectedRoute>
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          {/* Header */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              My Applications
-            </Typography>
-            <Typography variant="h6" color="textSecondary">
-              Track your job applications and their status
-            </Typography>
-          </Box>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">My Applications</h1>
+                <p className="text-gray-600 mt-2">Track your job applications and their status</p>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => router.push('/jobs')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  Browse Jobs
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          {/* Error Display */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+        {/* Filters and Search */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search applications..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex space-x-3">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="reviewing">Reviewing</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="withdrawn">Withdrawn</option>
+                </select>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="applied_at">Applied Date</option>
+                  <option value="updated_at">Updated Date</option>
+                  <option value="status">Status</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Applications List */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {error ? (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
               {error}
-            </Alert>
-          )}
-
-          {/* Filter Tabs */}
-          <Paper sx={{ mb: 3 }}>
-            <Tabs 
-              value={selectedTab} 
-              onChange={(_, newValue) => setSelectedTab(newValue)}
-              sx={{ px: 2 }}
-            >
-              <Tab label={`All (${applications.length})`} />
-              <Tab label={`Active (${applications.filter(app => 
-                ['pending', 'reviewing', 'shortlisted', 'interviewed'].includes(app.status)
-              ).length})`} />
-              <Tab label={`Completed (${applications.filter(app => 
-                ['hired', 'rejected', 'withdrawn'].includes(app.status)
-              ).length})`} />
-            </Tabs>
-          </Paper>
-
-          {/* Applications List */}
-          {getFilteredApplications().length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <WorkIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                No applications found
-              </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-                {selectedTab === 0 
-                  ? "You haven't applied to any jobs yet." 
-                  : "No applications match the selected filter."}
-              </Typography>
-              <Button
-                variant="contained"
+            </div>
+          ) : sortedApplications.length === 0 ? (
+            <div className="text-center py-12">
+              <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
+              <p className="text-gray-600 mb-6">
+                {searchQuery || statusFilter 
+                  ? 'Try adjusting your search criteria.'
+                  : 'You haven\'t applied to any jobs yet.'
+                }
+              </p>
+              <button
                 onClick={() => router.push('/jobs')}
-                startIcon={<WorkIcon />}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
               >
                 Browse Jobs
-              </Button>
-            </Paper>
+              </button>
+            </div>
           ) : (
-            <Grid container spacing={3}>
-              {getFilteredApplications().map((application) => (
-                <Grid item xs={12} key={application.id}>
-                  <Card>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" gutterBottom>
+            <div className="space-y-4">
+              {sortedApplications.map((application) => (
+                <motion.div
+                  key={application.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer">
                             {application.job.title}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <BusinessIcon fontSize="small" color="primary" />
-                              <Typography variant="body2">{application.job.company.name}</Typography>
-                            </Box>
-                            {application.job.location && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <LocationIcon fontSize="small" color="primary" />
-                                <Typography variant="body2">{application.job.location.name}</Typography>
-                              </Box>
-                            )}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <TimeIcon fontSize="small" color="primary" />
-                              <Typography variant="body2">Applied {formatDate(application.applied_at)}</Typography>
-                            </Box>
-                          </Box>
-                        </Box>
+                          </h3>
+                        </div>
                         
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip
-                            icon={statusIcons[application.status as keyof typeof statusIcons]}
-                            label={application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                            color={statusColors[application.status as keyof typeof statusColors]}
-                            variant="outlined"
-                          />
-                          <IconButton
-                            onClick={() => router.push(`/jobs/${application.job.slug}`)}
-                            title="View Job"
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                          {['pending', 'reviewing'].includes(application.status) && (
-                            <IconButton
-                              onClick={() => withdrawApplication(application.id)}
-                              title="Withdraw Application"
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+                        <div className="flex items-center text-gray-600 mb-3 space-x-4">
+                          <div className="flex items-center">
+                            <BuildingOfficeIcon className="h-4 w-4 mr-1" />
+                            <span>{application.job.company.name}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <MapPinIcon className="h-4 w-4 mr-1" />
+                            <span>{application.job.location.name}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+                            <span>{formatSalary(application.job.salary_min, application.job.salary_max)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-4 mb-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {application.job.job_type.replace('_', ' ')}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
+                            {getStatusIcon(application.status)}
+                            <span className="ml-1 capitalize">{application.status}</span>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center text-sm text-gray-500 space-x-4">
+                          <div className="flex items-center">
+                            <CalendarIcon className="h-4 w-4 mr-1" />
+                            <span>Applied: {formatDate(application.applied_at)}</span>
+                          </div>
+                          {application.updated_at !== application.applied_at && (
+                            <div className="flex items-center">
+                              <ClockIcon className="h-4 w-4 mr-1" />
+                              <span>Updated: {formatDate(application.updated_at)}</span>
+                            </div>
                           )}
-                        </Box>
-                      </Box>
+                        </div>
 
-                      {/* Progress Bar */}
-                      <Box sx={{ mb: 2 }}>
-                        <LinearProgress
-                          variant="determinate"
-                          value={getStatusProgress(application.status)}
-                          color={statusColors[application.status as keyof typeof statusColors]}
-                          sx={{ height: 8, borderRadius: 4 }}
-                        />
-                      </Box>
-
-                      {/* Application Details */}
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Expected Salary
-                          </Typography>
-                          <Typography variant="body1">
-                            {application.expected_salary 
-                              ? `$${application.expected_salary.toLocaleString()}`
-                              : 'Not specified'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Availability Date
-                          </Typography>
-                          <Typography variant="body1">
-                            {application.availability_date 
-                              ? formatDate(application.availability_date)
-                              : 'Not specified'}
-                          </Typography>
-                        </Grid>
-                        {application.job.salary_min || application.job.salary_max ? (
-                          <Grid item xs={12} md={6}>
-                            <Typography variant="body2" color="textSecondary" gutterBottom>
-                              Job Salary Range
-                            </Typography>
-                            <Typography variant="body1">
-                              {formatSalary(
-                                application.job.salary_min,
-                                application.job.salary_max,
-                                application.job.salary_currency
-                              )}
-                            </Typography>
-                          </Grid>
-                        ) : null}
-                        {application.reviewed_at && (
-                          <Grid item xs={12} md={6}>
-                            <Typography variant="body2" color="textSecondary" gutterBottom>
-                              Last Reviewed
-                            </Typography>
-                            <Typography variant="body1">
-                              {formatDate(application.reviewed_at)}
-                            </Typography>
-                          </Grid>
+                        {application.cover_letter && (
+                          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-700 line-clamp-2">
+                              {application.cover_letter}
+                            </p>
+                          </div>
                         )}
-                      </Grid>
+                      </div>
 
-                      {/* Cover Letter Preview */}
-                      {application.cover_letter && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Cover Letter Preview
-                          </Typography>
-                          <Typography variant="body2" sx={{ 
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {application.cover_letter}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {/* Employer Notes */}
-                      {application.employer_notes && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Employer Notes
-                          </Typography>
-                          <Alert severity="info">
-                            {application.employer_notes}
-                          </Alert>
-                        </Box>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
+                      <div className="ml-4 flex flex-col items-end space-y-2">
+                        <button
+                          onClick={() => router.push(`/jobs/${application.job.id}`)}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          View Job
+                        </button>
+                        {application.resume_url && (
+                          <a
+                            href={application.resume_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-gray-700 text-sm"
+                          >
+                            View Resume
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               ))}
-            </Grid>
+            </div>
           )}
-        </Container>
-      </ProtectedRoute>
+        </div>
+      </div>
     </Layout>
   );
 };

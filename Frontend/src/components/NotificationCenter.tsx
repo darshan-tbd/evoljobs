@@ -320,7 +320,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = memo(({ userId }) 
       <Box sx={{ p: 2, bgcolor: 'background.default' }}>
         <Alert 
           severity={connectionStatus === 'connecting' ? 'info' : 'warning'}
-          size="small"
         >
           {connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
           {connectionStatus === 'connecting' && (

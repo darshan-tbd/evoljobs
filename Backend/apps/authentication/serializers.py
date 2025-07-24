@@ -78,6 +78,23 @@ class UserSerializer(serializers.ModelSerializer):
             data['bio'] = profile.bio
             data['skills'] = profile.skills_text
             data['experience'] = profile.experience
+            
+            # Add resume information from Resume model
+            try:
+                from apps.resumes.models import Resume
+                primary_resume = Resume.objects.filter(user=instance, is_primary=True).first()
+                if primary_resume:
+                    data['resume'] = primary_resume.file.url if primary_resume.file else ''
+                    data['resume_filename'] = primary_resume.original_filename
+                    data['resume_id'] = primary_resume.id
+                else:
+                    data['resume'] = ''
+                    data['resume_filename'] = ''
+                    data['resume_id'] = None
+            except:
+                data['resume'] = ''
+                data['resume_filename'] = ''
+                data['resume_id'] = None
         else:
             # Set default values if no profile exists
             data['phone'] = ''
@@ -85,6 +102,9 @@ class UserSerializer(serializers.ModelSerializer):
             data['bio'] = ''
             data['skills'] = ''
             data['experience'] = ''
+            data['resume'] = ''
+            data['resume_filename'] = ''
+            data['resume_id'] = None
         
         return data
 

@@ -29,10 +29,12 @@ from django.utils.text import slugify
 User = get_user_model()
 
 class MichaelPageScraper:
-    def __init__(self):
+    def __init__(self, max_jobs=100):
         self.driver = None
         self.base_url = "https://www.michaelpage.com.au"
         self.search_url = "https://www.michaelpage.com.au/jobs"
+        self.max_jobs_to_scrape = max_jobs  # Configurable limit
+        self.jobs_scraped = 0
         
     def setup_driver(self):
         """Setup Chrome driver with proper options"""
@@ -63,9 +65,43 @@ class MichaelPageScraper:
             print("⚠️ Page load timeout")
             return False
     
+    def scroll_to_load_more_content(self):
+        """Scroll down to load more content if the page uses lazy loading"""
+        try:
+            print("📜 Scrolling to load more content...")
+            
+            # Get initial page height
+            initial_height = self.driver.execute_script("return document.body.scrollHeight")
+            
+            # Scroll down multiple times to trigger lazy loading
+            for i in range(3):
+                # Scroll to bottom
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(2)
+                
+                # Check if new content loaded
+                new_height = self.driver.execute_script("return document.body.scrollHeight")
+                if new_height > initial_height:
+                    print(f"✅ New content loaded (height: {initial_height} -> {new_height})")
+                    initial_height = new_height
+                else:
+                    print("ℹ️ No new content loaded")
+                    break
+            
+            # Scroll back to top
+            self.driver.execute_script("window.scrollTo(0, 0);")
+            time.sleep(2)
+            
+        except Exception as e:
+            print(f"⚠️ Error during scrolling: {str(e)[:50]}...")
+    
     def find_job_elements(self):
-        """Find job elements using multiple strategies"""
+        """Find job elements using multiple strategies with better error handling"""
         job_elements = []
+        
+        # Wait for page to fully load and stabilize
+        print("⏳ Waiting for page to stabilize...")
+        time.sleep(5)
         
         # Try different selectors that might work with current site
         selectors = [
@@ -103,22 +139,34 @@ class MichaelPageScraper:
         for selector in selectors:
             try:
                 print(f"🔍 Trying selector: {selector}")
+                
+                # Wait for elements to be present
+                wait = WebDriverWait(self.driver, 10)
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+                
                 elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
                 if elements:
                     print(f"✅ Found {len(elements)} elements with selector: {selector}")
+                    
                     # Filter out elements that are too small or likely not job cards
                     valid_elements = []
                     for elem in elements:
                         try:
+                            # Wait for element to be visible
+                            wait.until(EC.visibility_of(elem))
+                            
                             # Check if element has some content
                             if elem.text.strip() and len(elem.text.strip()) > 20:
                                 valid_elements.append(elem)
-                        except:
+                        except Exception as e:
+                            print(f"⚠️ Element validation failed: {str(e)[:30]}...")
                             continue
                     
                     if valid_elements:
                         print(f"✅ {len(valid_elements)} valid job elements found")
                         return valid_elements, selector
+                    else:
+                        print(f"⚠️ No valid elements found with selector: {selector}")
                         
             except Exception as e:
                 print(f"❌ Selector {selector} failed: {str(e)[:50]}...")
@@ -139,11 +187,40 @@ class MichaelPageScraper:
         }
         
         try:
-            # Get the HTML content of the job element
-            html_content = job_element.get_attribute('innerHTML')
+            # Use explicit wait to ensure element is still attached to DOM
+            wait = WebDriverWait(self.driver, 10)
+            
+            # Get the element's HTML content with retry mechanism
+            html_content = None
+            max_retries = 3
+            
+            for attempt in range(max_retries):
+                try:
+                    # Check if element is still attached to DOM
+                    wait.until(lambda driver: job_element.is_enabled())
+                    
+                    # Get HTML content
+                    html_content = job_element.get_attribute('innerHTML')
+                    if html_content:
+                        break
+                        
+                except Exception as e:
+                    print(f"⚠️ Attempt {attempt + 1} failed to get element content: {str(e)[:50]}...")
+                    if attempt < max_retries - 1:
+                        time.sleep(1)  # Wait before retry
+                        continue
+                    else:
+                        print("❌ Failed to get element content after all retries")
+                        return job_data
+            
+            if not html_content:
+                print("❌ No HTML content found")
+                return job_data
+            
+            # Parse with BeautifulSoup
             soup = BeautifulSoup(html_content, 'html.parser')
             
-            # Extract job title - try multiple approaches
+            # Extract job title - try multiple approaches with better error handling
             title_selectors = [
                 'h1', 'h2', 'h3', 'h4',
                 '.title', '.job-title', '.position-title',
@@ -154,17 +231,21 @@ class MichaelPageScraper:
             
             title_found = False
             for selector in title_selectors:
-                title_elements = soup.select(selector)
-                for elem in title_elements:
-                    text = elem.get_text(strip=True)
-                    if self.is_valid_job_title(text):
-                        job_data['title'] = text
-                        title_found = True
+                try:
+                    title_elements = soup.select(selector)
+                    for elem in title_elements:
+                        text = elem.get_text(strip=True)
+                        if self.is_valid_job_title(text):
+                            job_data['title'] = text
+                            title_found = True
+                            break
+                    if title_found:
                         break
-                if title_found:
-                    break
+                except Exception as e:
+                    print(f"⚠️ Error with title selector {selector}: {str(e)[:30]}...")
+                    continue
             
-            # Extract job URL
+            # Extract job URL with retry mechanism
             url_selectors = [
                 'a[href*="/job"]',
                 'a[href*="/position"]', 
@@ -174,61 +255,74 @@ class MichaelPageScraper:
             ]
             
             for selector in url_selectors:
-                url_elements = soup.select(selector)
-                for elem in url_elements:
-                    href = elem.get('href', '')
-                    if href and ('/job' in href or '/position' in href):
-                        if href.startswith('/'):
-                            job_data['url'] = self.base_url + href
-                        elif href.startswith('http'):
-                            job_data['url'] = href
+                try:
+                    url_elements = soup.select(selector)
+                    for elem in url_elements:
+                        href = elem.get('href', '')
+                        if href and ('/job' in href or '/position' in href):
+                            if href.startswith('/'):
+                                job_data['url'] = self.base_url + href
+                            elif href.startswith('http'):
+                                job_data['url'] = href
+                            break
+                    if job_data['url']:
                         break
-                if job_data['url']:
-                    break
+                except Exception as e:
+                    print(f"⚠️ Error with URL selector {selector}: {str(e)[:30]}...")
+                    continue
             
-            # Extract location
-            location_text = soup.get_text()
-            australian_cities = [
-                'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Darwin', 'Canberra',
-                'Gold Coast', 'Newcastle', 'Wollongong', 'Cairns', 'Townsville', 'Geelong',
-                'Ballarat', 'Bendigo', 'Albury', 'Launceston', 'Hobart', 'Mackay', 'Rockhampton'
-            ]
+            # Extract location with better text processing
+            try:
+                location_text = soup.get_text()
+                australian_cities = [
+                    'Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Darwin', 'Canberra',
+                    'Gold Coast', 'Newcastle', 'Wollongong', 'Cairns', 'Townsville', 'Geelong',
+                    'Ballarat', 'Bendigo', 'Albury', 'Launceston', 'Hobart', 'Mackay', 'Rockhampton'
+                ]
+                
+                for city in australian_cities:
+                    if city in location_text:
+                        job_data['location'] = city
+                        break
+            except Exception as e:
+                print(f"⚠️ Error extracting location: {str(e)[:30]}...")
             
-            for city in australian_cities:
-                if city in location_text:
-                    job_data['location'] = city
-                    break
-            
-            # Extract salary info
-            salary_patterns = [
-                r'AU\$[\d,]+\s*-\s*AU\$[\d,]+',
-                r'\$[\d,]+\s*-\s*\$[\d,]+',
-                r'[\d,]+k\s*-\s*[\d,]+k',
-                r'AU\$[\d,]+',
-                r'\$[\d,]+',
-                r'[\d,]+k'
-            ]
-            
-            for pattern in salary_patterns:
-                match = re.search(pattern, location_text)
-                if match:
-                    job_data['salary'] = match.group(0)
-                    break
+            # Extract salary info with better regex handling
+            try:
+                salary_patterns = [
+                    r'AU\$[\d,]+\s*-\s*AU\$[\d,]+',
+                    r'\$[\d,]+\s*-\s*\$[\d,]+',
+                    r'[\d,]+k\s*-\s*[\d,]+k',
+                    r'AU\$[\d,]+',
+                    r'\$[\d,]+',
+                    r'[\d,]+k'
+                ]
+                
+                for pattern in salary_patterns:
+                    match = re.search(pattern, location_text)
+                    if match:
+                        job_data['salary'] = match.group(0)
+                        break
+            except Exception as e:
+                print(f"⚠️ Error extracting salary: {str(e)[:30]}...")
             
             # Extract company if different from default
-            company_selectors = [
-                '.company', '.employer', '[class*="company"]', '[class*="employer"]'
-            ]
-            
-            for selector in company_selectors:
-                company_elements = soup.select(selector)
-                for elem in company_elements:
-                    text = elem.get_text(strip=True)
-                    if text and text != 'Michael Page' and len(text) > 2:
-                        job_data['company'] = text
+            try:
+                company_selectors = [
+                    '.company', '.employer', '[class*="company"]', '[class*="employer"]'
+                ]
+                
+                for selector in company_selectors:
+                    company_elements = soup.select(selector)
+                    for elem in company_elements:
+                        text = elem.get_text(strip=True)
+                        if text and text != 'Michael Page' and len(text) > 2:
+                            job_data['company'] = text
+                            break
+                    if job_data['company'] != 'Michael Page':
                         break
-                if job_data['company'] != 'Michael Page':
-                    break
+            except Exception as e:
+                print(f"⚠️ Error extracting company: {str(e)[:30]}...")
             
             print(f"📋 Extracted from listing: {job_data['title'][:50]}... | {job_data['company']} | {job_data['location']}")
             
@@ -428,6 +522,13 @@ class MichaelPageScraper:
     def save_job_to_database(self, job_data):
         """Save job data to the database"""
         try:
+            # Check if job already exists by URL
+            if job_data.get('url'):
+                existing_job = JobPosting.objects.filter(external_url=job_data['url']).first()
+                if existing_job:
+                    print(f"⏭️ Job already exists: {job_data['title']}")
+                    return existing_job
+            
             # Get or create company
             company_name = job_data.get('company', 'Michael Page')
             company_slug = slugify(company_name)
@@ -507,77 +608,216 @@ class MichaelPageScraper:
             print(f"❌ Error saving job to database: {str(e)}")
             return None
     
-    def scrape_job(self):
-        """Main scraping method"""
+    def scrape_multiple_jobs(self):
+        """Main scraping method to fetch multiple jobs"""
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"🔄 Attempt {attempt + 1}/{max_retries}")
+                
+                # Setup driver
+                self.setup_driver()
+                
+                # Navigate to jobs page
+                print(f"🔍 Loading Michael Page jobs page...")
+                self.driver.get(self.search_url)
+                
+                if not self.wait_for_page_load():
+                    print("❌ Failed to load page")
+                    return
+                
+                print(f"📄 Page loaded: {self.driver.title}")
+                
+                # Try to scroll to load more content
+                self.scroll_to_load_more_content()
+                
+                # Find job elements and collect URLs first
+                job_urls = self.collect_job_urls()
+                
+                if not job_urls:
+                    print("❌ No job URLs found")
+                    # Save page source for debugging
+                    with open('debug_page.html', 'w', encoding='utf-8') as f:
+                        f.write(self.driver.page_source)
+                    print("💾 Page source saved to 'debug_page.html'")
+                    return
+                
+                print(f"🎯 Found {len(job_urls)} job URLs. Will scrape up to {self.max_jobs_to_scrape} jobs.")
+                
+                # Process each job URL
+                successful_jobs = 0
+                failed_jobs = 0
+                
+                for i, job_url in enumerate(job_urls):
+                    if self.jobs_scraped >= self.max_jobs_to_scrape:
+                        print(f"🛑 Reached maximum jobs limit ({self.max_jobs_to_scrape})")
+                        break
+                    
+                    try:
+                        print(f"\n📋 Processing job {i + 1}/{len(job_urls)}")
+                        print(f"🔗 URL: {job_url}")
+                        
+                        # Extract detailed information from job detail page
+                        detailed_info = self.extract_detailed_job_info(job_url)
+                        
+                        if not detailed_info['title']:
+                            print("❌ Could not extract job title from detail page")
+                            failed_jobs += 1
+                            continue
+                        
+                        # Create job data structure
+                        job_data = {
+                            'title': detailed_info['title'],
+                            'company': detailed_info.get('company', 'Michael Page'),
+                            'location': detailed_info.get('location', ''),
+                            'salary': detailed_info.get('salary', ''),
+                            'url': job_url,
+                            'description': detailed_info.get('description', 'No description available'),
+                            'posted_date': None
+                        }
+                        
+                        # Ensure we have minimum required data
+                        if not job_data['title'] or not self.is_valid_job_title(job_data['title']):
+                            print("❌ No valid job title found")
+                            failed_jobs += 1
+                            continue
+                        
+                        # Save to database
+                        job_obj = self.save_job_to_database(job_data)
+                        
+                        if job_obj:
+                            successful_jobs += 1
+                            self.jobs_scraped += 1
+                            print(f"🎉 Successfully scraped and saved job: {job_obj.title}")
+                        else:
+                            failed_jobs += 1
+                            print("❌ Failed to save job to database")
+                        
+                        # Add delay between jobs to be respectful and avoid rate limiting
+                        delay = random.uniform(2, 5)  # Random delay between 2-5 seconds
+                        print(f"⏱️ Waiting {delay:.1f} seconds before next job...")
+                        time.sleep(delay)
+                        
+                    except Exception as e:
+                        print(f"❌ Error processing job {i + 1}: {str(e)}")
+                        failed_jobs += 1
+                        continue
+                
+                print(f"\n📊 Scraping Summary:")
+                print(f"   Total jobs found: {len(job_urls)}")
+                print(f"   Successfully scraped: {successful_jobs}")
+                print(f"   Failed: {failed_jobs}")
+                print(f"   Total jobs in database: {JobPosting.objects.count()}")
+                
+                # If we got some jobs, consider it successful
+                if successful_jobs > 0:
+                    print("✅ Scraping completed successfully!")
+                    break
+                else:
+                    print(f"⚠️ No jobs scraped in attempt {attempt + 1}")
+                    if attempt < max_retries - 1:
+                        print("🔄 Retrying...")
+                        if self.driver:
+                            self.driver.quit()
+                        time.sleep(5)  # Wait before retry
+                    else:
+                        print("❌ All retry attempts failed")
+                        
+            except Exception as e:
+                print(f"❌ Unexpected error during scraping: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                
+                if attempt < max_retries - 1:
+                    print("🔄 Retrying due to error...")
+                    if self.driver:
+                        self.driver.quit()
+                    time.sleep(5)  # Wait before retry
+                else:
+                    print("❌ All retry attempts failed")
+            
+            finally:
+                if self.driver:
+                    self.driver.quit()
+                    print("🔚 Browser closed")
+    
+    def collect_job_urls(self):
+        """Collect all job URLs from the listing page without visiting them"""
+        job_urls = []
+        
         try:
-            # Setup driver
-            self.setup_driver()
-            
-            # Navigate to jobs page
-            print(f"🔍 Loading Michael Page jobs page...")
-            self.driver.get(self.search_url)
-            
-            if not self.wait_for_page_load():
-                print("❌ Failed to load page")
-                return
-            
-            print(f"📄 Page loaded: {self.driver.title}")
-            
             # Find job elements
             job_elements, working_selector = self.find_job_elements()
             
             if not job_elements:
-                print("❌ No job elements found")
-                # Save page source for debugging
-                with open('debug_page.html', 'w', encoding='utf-8') as f:
-                    f.write(self.driver.page_source)
-                print("💾 Page source saved to 'debug_page.html'")
-                return
+                return []
             
-            # Select random job
-            selected_job = random.choice(job_elements)
-            print(f"🎲 Selected random job from {len(job_elements)} available")
+            print(f"🔍 Collecting URLs from {len(job_elements)} job elements...")
             
-            # Extract basic job data from listing
-            job_data = self.extract_job_data_from_listing(selected_job)
+            # Extract URLs from all elements at once
+            for i, job_element in enumerate(job_elements):
+                try:
+                    # Get HTML content
+                    html_content = job_element.get_attribute('innerHTML')
+                    if not html_content:
+                        continue
+                    
+                    # Parse with BeautifulSoup
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    
+                    # Find job URL
+                    url_selectors = [
+                        'a[href*="/job"]',
+                        'a[href*="/position"]', 
+                        'a[href*="/jobs"]',
+                        'a[href*="/careers"]',
+                        'a[href]'
+                    ]
+                    
+                    job_url = None
+                    for selector in url_selectors:
+                        url_elements = soup.select(selector)
+                        for elem in url_elements:
+                            href = elem.get('href', '')
+                            if href and ('/job' in href or '/position' in href):
+                                if href.startswith('/'):
+                                    job_url = self.base_url + href
+                                elif href.startswith('http'):
+                                    job_url = href
+                                break
+                        if job_url:
+                            break
+                    
+                    if job_url and job_url not in job_urls:
+                        job_urls.append(job_url)
+                        print(f"✅ Collected URL {len(job_urls)}: {job_url}")
+                    
+                except Exception as e:
+                    print(f"⚠️ Error collecting URL from element {i + 1}: {str(e)[:30]}...")
+                    continue
             
-            if not job_data['title']:
-                print("❌ Could not extract job title from listing")
-                return
+            print(f"🎯 Successfully collected {len(job_urls)} unique job URLs")
+            return job_urls
             
-            # Get detailed information from job detail page
-            detailed_info = self.extract_detailed_job_info(job_data['url'])
-            
-            # Merge data (detailed info takes precedence)
-            final_job_data = {**job_data, **{k: v for k, v in detailed_info.items() if v}}
-            
-            # Ensure we have minimum required data
-            if not final_job_data['title'] or not self.is_valid_job_title(final_job_data['title']):
-                print("❌ No valid job title found")
-                return
-            
-            # Save to database
-            job_obj = self.save_job_to_database(final_job_data)
-            
-            if job_obj:
-                print(f"🎉 Successfully scraped and saved job: {job_obj.title}")
-            else:
-                print("❌ Failed to save job to database")
-                
         except Exception as e:
-            print(f"❌ Unexpected error during scraping: {str(e)}")
-            import traceback
-            traceback.print_exc()
-        
-        finally:
-            if self.driver:
-                self.driver.quit()
-                print("🔚 Browser closed")
+            print(f"❌ Error collecting job URLs: {str(e)}")
+            return []
 
-def fetch_michael_page_job():
-    """Main function to fetch a Michael Page job"""
-    scraper = MichaelPageScraper()
-    scraper.scrape_job()
+def fetch_michael_page_job(max_jobs=100):
+    """Main function to fetch multiple Michael Page jobs"""
+    scraper = MichaelPageScraper(max_jobs=max_jobs)
+    scraper.scrape_multiple_jobs()
 
 if __name__ == "__main__":
-    fetch_michael_page_job() 
+    # Allow command line argument for number of jobs
+    import sys
+    max_jobs = 100
+    if len(sys.argv) > 1:
+        try:
+            max_jobs = int(sys.argv[1])
+        except ValueError:
+            print("Invalid number of jobs. Using default: 100")
+    
+    print(f"🚀 Starting scraper to fetch up to {max_jobs} jobs...")
+    fetch_michael_page_job(max_jobs) 

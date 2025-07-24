@@ -1,599 +1,799 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Pagination,
-  Paper,
-  Skeleton,
-  Alert,
-  useMediaQuery,
-  useTheme,
-  Drawer,
-  IconButton,
-  Fab,
-  Badge,
-} from '@mui/material';
-import {
-  FilterList as FilterListIcon,
-  Close as CloseIcon,
-  Work as WorkIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../hooks/useAuth';
-import ProtectedRoute from '../components/ProtectedRoute';
-import JobFilters from '../components/JobFilters';
-import JobCard from '../components/JobCard';
-import { apiClient } from '../services/authAPI';
+import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  MagnifyingGlassIcon,
+  MapPinIcon,
+  BuildingOfficeIcon,
+  CurrencyDollarIcon,
+  BriefcaseIcon,
+  ClockIcon,
+  FunnelIcon,
+  XMarkIcon,
+  BookmarkIcon,
+  BookmarkSlashIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  AdjustmentsHorizontalIcon,
+  SparklesIcon,
+  EyeIcon
+} from '@heroicons/react/24/outline';
+import Layout from '@/components/layout/Layout';
+import { apiClient } from '@/services/authAPI';
 
 interface Job {
   id: string;
   title: string;
-  slug: string;
-  description?: string;
+  slug?: string;
   company: {
-    id: string;
-    name: string;
-    logo?: string;
-    website?: string;
-  };
-  location?: {
-    id: string;
-    name: string;
-    city?: string;
-    state?: string;
-    country?: string;
-  };
-  industry?: {
-    id: string;
     name: string;
   };
+  location: {
+    name: string;
+  };
+  description: string;
   job_type: string;
-  experience_level: string;
-  remote_option: string;
   salary_min?: number;
   salary_max?: number;
-  salary_display?: string;
-  required_skills?: Array<{
-    id: string;
-    name: string;
-    category?: string;
-  }>;
+  salary_currency?: string;
+  salary_type?: string;
+  remote_option?: string;
+  external_url?: string;
+  required_skills?: Array<{ id: number; name: string }>;
+  created_at: string;
   is_featured?: boolean;
-  is_recent?: boolean;
-  is_trending?: boolean;
-  is_urgent?: boolean;
   views_count?: number;
   applications_count?: number;
-  time_since_posted?: string;
-  application_deadline?: string;
-  created_at: string;
-  application_url?: string;
 }
+
+
+interface JobsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Job[];
+}
+
+// Debounce hook for search
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 const JobsPage: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  
-
-
-  // Results state
+  const { isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [jobTypeFilter, setJobTypeFilter] = useState('');
+  const [experienceFilter, setExperienceFilter] = useState('');
+  const [remoteFilter, setRemoteFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   
-  // Facets state
-  const [facets, setFacets] = useState(null);
-  const [facetsLoading, setFacetsLoading] = useState(false);
-  
-  // Saved jobs state
-  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
-  const [loadingSavedJobs, setLoadingSavedJobs] = useState(false);
-  
-  // Add refs to track loading states to prevent concurrent calls
-  const loadingSavedJobsRef = useRef(false);
-  const fetchingJobsRef = useRef(false);
-  
-  // Mobile filter drawer state
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [pageSize] = useState(9); // 9 jobs per page (3 jobs per row)
 
-  // Memoize filters from URL params to prevent infinite re-renders
-  const filters = useMemo(() => {
-    // Only recalculate if router.query actually changed
-    if (!router.isReady) {
-      return {
-        searchTerm: '',
-        location: '',
-        jobTypes: [],
-        experienceLevels: [],
-        remoteOptions: [],
-        companies: [],
-        industries: [],
-        skills: [],
-        salaryRange: [0, 200000],
-        datePosted: '',
-        featuredOnly: false,
-        excludeExpired: true,
-        hasDeadline: false,
-        sortBy: 'created_at',
-        sortOrder: 'desc' as 'asc' | 'desc',
-      };
-    }
-    
-    const {
-      q,
-      location: loc,
-      job_types,
-      experience_levels,
-      remote_options,
-      companies,
-      industries,
-      skills,
-      salary_min,
-      salary_max,
-      date_posted,
-      featured_only,
-      exclude_expired,
-      has_deadline,
-      sort_by,
-      sort_order,
-    } = router.query;
-    
-    return {
-      searchTerm: (q as string) || '',
-      location: (loc as string) || '',
-      jobTypes: job_types ? (job_types as string).split(',') : [],
-      experienceLevels: experience_levels ? (experience_levels as string).split(',') : [],
-      remoteOptions: remote_options ? (remote_options as string).split(',') : [],
-      companies: companies ? (companies as string).split(',') : [],
-      industries: industries ? (industries as string).split(',') : [],
-      skills: skills ? (skills as string).split(',') : [],
-      salaryRange: [
-        parseInt(salary_min as string) || 0,
-        parseInt(salary_max as string) || 200000,
-      ],
-      datePosted: (date_posted as string) || '',
-      featuredOnly: featured_only === 'true',
-      excludeExpired: exclude_expired !== 'false',
-      hasDeadline: has_deadline === 'true',
-      sortBy: (sort_by as string) || 'created_at',
-      sortOrder: (sort_order as 'asc' | 'desc') || 'desc',
-    };
-  }, [
-    router.isReady,
-    router.query.q,
-    router.query.location,
-    router.query.job_types,
-    router.query.experience_levels,
-    router.query.remote_options,
-    router.query.companies,
-    router.query.industries,
-    router.query.skills,
-    router.query.salary_min,
-    router.query.salary_max,
-    router.query.date_posted,
-    router.query.featured_only,
-    router.query.exclude_expired,
-    router.query.has_deadline,
-    router.query.sort_by,
-    router.query.sort_order,
-  ]);
+  // Debounce search query
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  const fetchJobs = useCallback(async () => {
-    if (fetchingJobsRef.current) return; // Prevent concurrent requests
-    
-    fetchingJobsRef.current = true;
-    setLoading(true);
-    setError('');
-    
-    // Minimum loading time to prevent blinking
-    const startTime = Date.now();
-    const minLoadingTime = 200;
-    
+  const jobTypes = [
+    { value: 'full_time', label: 'Full Time', icon: '🕒' },
+    { value: 'part_time', label: 'Part Time', icon: '⏰' },
+    { value: 'contract', label: 'Contract', icon: '📋' },
+    { value: 'internship', label: 'Internship', icon: '🎓' },
+  ];
+
+  const experienceLevels = [
+    { value: 'entry', label: 'Entry Level', icon: '🌱' },
+    { value: 'junior', label: 'Junior', icon: '👶' },
+    { value: 'mid', label: 'Mid Level', icon: '👨‍💼' },
+    { value: 'senior', label: 'Senior', icon: '👴' },
+    { value: 'lead', label: 'Lead', icon: '👑' },
+    { value: 'executive', label: 'Executive', icon: '🏆' },
+  ];
+
+  const remoteOptions = [
+    { value: 'onsite', label: 'On-site', icon: '🏢' },
+    { value: 'remote', label: 'Remote', icon: '🏠' },
+    { value: 'hybrid', label: 'Hybrid', icon: '🔄' },
+  ];
+
+  const sortOptions = [
+    { value: 'created_at', label: 'Latest', icon: '🕒' },
+    { value: 'title', label: 'Title A-Z', icon: '📝' },
+    { value: 'salary_min', label: 'Salary High-Low', icon: '💰' },
+    { value: 'views_count', label: 'Most Viewed', icon: '👁️' },
+  ];
+
+  const fetchJobs = useCallback(async (page = 1) => {
     try {
+      setLoading(true);
+      setError('');
+      
       const params = new URLSearchParams();
-      
-      // Basic search
-      if (filters.searchTerm) params.set('q', filters.searchTerm);
-      if (filters.location) params.set('location', filters.location);
-      
-      // Multiple selections
-      if (filters.jobTypes.length) params.set('job_types', filters.jobTypes.join(','));
-      if (filters.experienceLevels.length) params.set('experience_levels', filters.experienceLevels.join(','));
-      if (filters.remoteOptions.length) params.set('remote_options', filters.remoteOptions.join(','));
-      if (filters.companies.length) params.set('companies', filters.companies.join(','));
-      if (filters.industries.length) params.set('industries', filters.industries.join(','));
-      if (filters.skills.length) params.set('skills', filters.skills.join(','));
-      
-      // Salary range
-      if (filters.salaryRange[0] > 0) params.set('salary_min', filters.salaryRange[0].toString());
-      if (filters.salaryRange[1] < 200000) params.set('salary_max', filters.salaryRange[1].toString());
-      
-      // Date and special filters
-      if (filters.datePosted) params.set('date_posted', filters.datePosted);
-      if (filters.featuredOnly) params.set('featured_only', 'true');
-      if (filters.excludeExpired) params.set('exclude_expired', 'true');
-      if (filters.hasDeadline) params.set('has_deadline', 'true');
-      
-      // Sorting
-      params.set('ordering', filters.sortOrder === 'asc' ? filters.sortBy : `-${filters.sortBy}`);
-      
-      // Pagination
-      params.set('page', page.toString());
-      
-      const finalUrl = `/jobs/jobs/?${params.toString()}`;
-      
-      const response = await apiClient.get(finalUrl);
-      
-      if (response.status === 200) {
-        const data = response.data;
-        setJobs(data.results || []);
-        setTotalCount(data.count || 0);
-        setTotalPages(Math.ceil((data.count || 0) / 12)); // Assuming 12 per page
-        setFacets(data.facets || null);
-        
-        // Clear any previous error messages on successful load
-        if (data.results?.length > 0) {
-          setError('');
-        }
-      } else {
-        throw new Error('Failed to fetch jobs');
-      }
-    } catch (error: any) {
-      console.error('Error fetching jobs:', error);
-      setError(error.message || 'Failed to load jobs. Please try again.');
-    } finally {
-      // Ensure minimum loading time to prevent blinking
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
-      
-      setTimeout(() => {
-        setLoading(false);
-        fetchingJobsRef.current = false;
-      }, remainingTime);
-    }
-  }, [filters, page]); // Only depend on actual filter/page changes
+      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
+      if (locationFilter) params.append('location', locationFilter);
+      if (jobTypeFilter) params.append('job_type', jobTypeFilter);
+      if (experienceFilter) params.append('experience_level', experienceFilter);
+      if (remoteFilter) params.append('remote_option', remoteFilter);
+      params.append('page', page.toString());
+      params.append('page_size', pageSize.toString());
+      params.append('ordering', sortOrder === 'desc' ? `-${sortBy}` : sortBy);
 
-  // Load saved jobs status
-  const loadSavedJobs = useCallback(async (jobIds: string[]) => {
-    if (!user || jobIds.length === 0) return;
-    
-    // Use a flag to prevent duplicate calls
-    if (loadingSavedJobsRef.current) return;
-    
-    loadingSavedJobsRef.current = true;
-    
-    try {
-      const response = await apiClient.get(`/jobs/saved-jobs/check/?jobs=${jobIds.join(',')}`);
+      console.log('Fetching jobs with params:', params.toString());
+      const response = await apiClient.get(`/jobs/jobs/?${params.toString()}`);
+      console.log('Jobs response:', response.data);
+      const data: JobsResponse = response.data;
       
-      if (response.status === 200) {
-        const data = response.data;
-        setSavedJobs(new Set(data.saved_jobs));
+      setJobs(data.results || []);
+      setTotalJobs(data.count);
+      setTotalPages(Math.ceil(data.count / pageSize));
+      setCurrentPage(page);
+    } catch (err: any) {
+      console.error('Error fetching jobs:', err);
+      setError(err.message || 'Failed to fetch jobs');
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearchQuery, locationFilter, jobTypeFilter, experienceFilter, remoteFilter, pageSize, sortBy, sortOrder]);
+
+  // Fetch jobs when filters change
+  useEffect(() => {
+    fetchJobs(1);
+  }, [fetchJobs]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchJobs(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleSortChange = (newSortBy: string) => {
+    if (newSortBy === sortBy) {
+      // Toggle sort order if same field
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    } else {
+      // Set new sort field with default desc order
+      setSortBy(newSortBy);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleApply = async (job: Job) => {
+    // Check if user is authenticated first
+    if (!isAuthenticated) {
+      // Redirect to login page with current page as redirect parameter
+      router.push(`/login?redirect=${encodeURIComponent(router.asPath)}`);
+      toast.error('Please log in to apply for this job');
+      return;
+    }
+
+    if (job.external_url) {
+      try {
+        // First, create external application entry
+        await trackExternalApplication(job.id, job.external_url);
+        
+        // Show success message
+        toast.success('Application tracked! Redirecting to external site...');
+        
+        // Then redirect to external URL
+        window.open(job.external_url, '_blank');
+      } catch (error: any) {
+        console.error('Failed to track external application:', error);
+        toast.error(error.message || 'Failed to track application. Please try again.');
+      }
+    } else {
+      // Redirect to full application form (same as job details page)
+      router.push(`/jobs/${job.slug || job.id}/apply`);
+    }
+  };
+
+  const trackExternalApplication = async (jobId: string, externalUrl: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      // Authentication is already checked in handleApply, so token should exist
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch('http://127.0.0.1:8000/api/v1/applications/external-applications/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          job: jobId,
+          external_url: externalUrl
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('External application created successfully:', data);
+        return data;
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to create external application:', errorData);
+        
+        if (errorData.error === 'You have already applied to this job') {
+          throw new Error('You have already applied to this job!');
+        } else {
+          throw new Error(errorData.error || 'Failed to track external application');
+        }
       }
     } catch (error) {
-      // Silently handle auth errors and other errors for saved jobs
-      // This is an optional feature that shouldn't block the jobs page
-      if (error.response?.status === 401) {
-        // User not authenticated for saved jobs, set empty saved jobs silently
-        setSavedJobs(new Set());
-      } else {
-        // Other errors - log but don't show to user
-        console.error('Error loading saved jobs:', error);
-        setSavedJobs(new Set());
-      }
-    } finally {
-      loadingSavedJobsRef.current = false;
+      console.error('Failed to track external application:', error);
+      throw error;
     }
-  }, [user]);
+  };
 
-  // Add a ref to track if saved jobs have been loaded for current jobs
-  const savedJobsLoadedRef = useRef<string>('');
 
-  // Separate effect for loading saved jobs after jobs are loaded
-  useEffect(() => {
-    if (user && jobs.length > 0) {
-      const jobIdString = jobs.map(job => job.id).sort().join(',');
-      if (savedJobsLoadedRef.current !== jobIdString) {
-        savedJobsLoadedRef.current = jobIdString;
-        loadSavedJobs(jobs.map(job => job.id));
-      }
+
+  const formatSalary = (job: Job) => {
+    if (!job.salary_min && !job.salary_max) return 'Salary not specified';
+    
+    const currency = job.salary_currency || 'USD';
+    const type = job.salary_type || 'yearly';
+    
+    if (job.salary_min && job.salary_max) {
+      return `${currency} ${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()} / ${type}`;
+    } else if (job.salary_min) {
+      return `${currency} ${job.salary_min.toLocaleString()}+ / ${type}`;
+    } else if (job.salary_max) {
+      return `${currency} Up to ${job.salary_max.toLocaleString()} / ${type}`;
     }
-  }, [jobs, user]); // Removed loadSavedJobs from dependencies to fix infinite loop
+    
+    return 'Salary not specified';
+  };
 
-  // Fetch jobs when filters or page change - debounced to prevent rapid re-renders
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setLocationFilter('');
+    setJobTypeFilter('');
+    setExperienceFilter('');
+    setRemoteFilter('');
+  };
+
+  const hasActiveFilters = debouncedSearchQuery || locationFilter || jobTypeFilter || experienceFilter || remoteFilter;
+
+  // Prevent hydration mismatch
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchJobs();
-    }, 300); // Debounce rapid filter changes
-
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, page]); // Only trigger when filters or page actually change
-
-  // Fetch facets on component mount
-  useEffect(() => {
-    fetchFacets();
+    setMounted(true);
   }, []);
 
-  const fetchFacets = async () => {
-    setFacetsLoading(true);
-    
-    try {
-      const response = await apiClient.get('/jobs/jobs/facets/');
-      
-      if (response.status === 200) {
-        const data = response.data;
-        setFacets(data);
-      }
-    } catch (err) {
-      console.error('Error fetching facets:', err);
-    } finally {
-      setFacetsLoading(false);
-    }
-  };
-
-  const handleFiltersChange = useCallback((newFilters: any) => {
-    setPage(1);
-    
-    // Update URL with search params
-    const params = new URLSearchParams();
-    
-    // Basic search
-    if (newFilters.searchTerm) params.set('q', newFilters.searchTerm);
-    if (newFilters.location) params.set('location', newFilters.location);
-    
-    // Multiple selections
-    if (newFilters.jobTypes.length) params.set('job_types', newFilters.jobTypes.join(','));
-    if (newFilters.experienceLevels.length) params.set('experience_levels', newFilters.experienceLevels.join(','));
-    if (newFilters.remoteOptions.length) params.set('remote_options', newFilters.remoteOptions.join(','));
-    if (newFilters.companies.length) params.set('companies', newFilters.companies.join(','));
-    if (newFilters.industries.length) params.set('industries', newFilters.industries.join(','));
-    if (newFilters.skills.length) params.set('skills', newFilters.skills.join(','));
-    
-    // Salary range
-    if (newFilters.salaryRange[0] > 0) params.set('salary_min', newFilters.salaryRange[0].toString());
-    if (newFilters.salaryRange[1] < 200000) params.set('salary_max', newFilters.salaryRange[1].toString());
-    
-    // Other filters
-    if (newFilters.datePosted) params.set('date_posted', newFilters.datePosted);
-    if (newFilters.featuredOnly) params.set('featured_only', 'true');
-    if (!newFilters.excludeExpired) params.set('exclude_expired', 'false');
-    if (newFilters.hasDeadline) params.set('has_deadline', 'true');
-    if (newFilters.sortBy !== 'created_at') params.set('sort_by', newFilters.sortBy);
-    if (newFilters.sortOrder !== 'desc') params.set('sort_order', newFilters.sortOrder);
-    
-    router.push(`/jobs?${params.toString()}`, undefined, { shallow: true });
-  }, [router]);
-
-  const toggleSaveJob = async (jobId: string) => {
-    if (!user) return;
-    
-    try {
-      const response = await apiClient.post('/jobs/saved-jobs/toggle/', { job: jobId });
-
-      if (response.status === 200) {
-        const data = response.data;
-        setSavedJobs(prevSet => {
-          const newSet = new Set(prevSet);
-          if (data.saved) {
-            newSet.add(jobId);
-          } else {
-            newSet.delete(jobId);
-          }
-          return newSet;
-        });
-        // Successfully toggled saved job status
-      } else {
-        console.error('Failed to toggle saved job');
-      }
-    } catch (error) {
-      console.error('Error toggling saved job:', error);
-    }
-  };
-
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (filters.searchTerm) count++;
-    if (filters.location) count++;
-    if (filters.jobTypes.length) count += filters.jobTypes.length;
-    if (filters.experienceLevels.length) count += filters.experienceLevels.length;
-    if (filters.remoteOptions.length) count += filters.remoteOptions.length;
-    if (filters.companies.length) count += filters.companies.length;
-    if (filters.industries.length) count += filters.industries.length;
-    if (filters.skills.length) count += filters.skills.length;
-    if (filters.datePosted) count++;
-    if (filters.featuredOnly) count++;
-    if (filters.hasDeadline) count++;
-    return count;
-  };
+  if (!mounted) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
-    <ProtectedRoute requireAuth={false}>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Find Your Dream Job
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Discover opportunities that match your skills and interests
-          </Typography>
-        </Box>
-
-        <Grid container spacing={3}>
-          {/* Desktop Filters */}
-          {!isMobile && (
-            <Grid item xs={12} lg={3}>
-              <JobFilters
-                onFiltersChange={handleFiltersChange}
-                facets={facets}
-                loading={facetsLoading}
-                initialFilters={filters}
-              />
-            </Grid>
-          )}
-
-          {/* Main Content */}
-          <Grid item xs={12} lg={isMobile ? 12 : 9}>
-            {/* Results Header */}
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" key={`results-${totalCount}-${loading}`}>
-                {loading ? 'Loading...' : `${totalCount} jobs found`}
-              </Typography>
+    <Layout>
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Find Your Dream Job
+              </h1>
+              <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                Discover thousands of opportunities from top companies worldwide
+              </p>
               
-              {/* Mobile Filter Button */}
-              {isMobile && (
-                <Badge badgeContent={getActiveFiltersCount()} color="primary">
-                  <Fab
-                    color="primary"
-                    size="small"
-                    onClick={() => setMobileFiltersOpen(true)}
-                    sx={{ mr: 1 }}
+              {/* Search Bar */}
+              <div className="max-w-2xl mx-auto">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <MagnifyingGlassIcon className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search jobs, companies, or keywords..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-12 pr-4 py-4 text-lg border-0 rounded-xl shadow-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-900"
+                  />
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   >
-                    <FilterListIcon />
-                  </Fab>
-                </Badge>
-              )}
-            </Box>
+                    <AdjustmentsHorizontalIcon className="h-6 w-6 text-gray-400 hover:text-blue-600 transition-colors" />
+                  </button>
+                </div>
+                {searchQuery && (
+                  <div className="mt-2 text-sm text-blue-100">
+                    {loading ? 'Searching...' : `Searching for "${searchQuery}"`}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
+        {/* Filters Section */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-white border-b border-gray-200 shadow-sm"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                  {/* Location Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Any location..."
+                      value={locationFilter}
+                      onChange={(e) => setLocationFilter(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
 
+                  {/* Job Type Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Job Type
+                    </label>
+                    <select
+                      value={jobTypeFilter}
+                      onChange={(e) => setJobTypeFilter(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Types</option>
+                      {jobTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.icon} {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-            {/* Error Message */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
+                  {/* Experience Level Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Experience
+                    </label>
+                    <select
+                      value={experienceFilter}
+                      onChange={(e) => setExperienceFilter(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Levels</option>
+                      {experienceLevels.map((level) => (
+                        <option key={level.value} value={level.value}>
+                          {level.icon} {level.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-            {/* Job Listings */}
-            <Grid container spacing={3}>
-              {loading ? (
-                // Loading skeletons - Fixed keys to prevent re-rendering
-                Array.from({ length: 6 }).map((_, index) => (
-                  <Grid item xs={12} key={`skeleton-${index}`}>
-                    <Paper sx={{ p: 3, borderRadius: 3 }}>
-                      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                        <Skeleton variant="circular" width={48} height={48} />
-                        <Box sx={{ flex: 1 }}>
-                          <Skeleton variant="text" width="60%" height={32} />
-                          <Skeleton variant="text" width="40%" height={24} />
-                        </Box>
-                      </Box>
-                      <Skeleton variant="text" width="80%" height={20} />
-                      <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                        <Skeleton variant="rectangular" width={80} height={24} />
-                        <Skeleton variant="rectangular" width={100} height={24} />
-                        <Skeleton variant="rectangular" width={70} height={24} />
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))
-              ) : jobs.length === 0 ? (
-                <Grid item xs={12}>
-                  <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3 }}>
-                    <WorkIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                      No jobs found
-                    </Typography>
-                    <Typography color="text.secondary">
-                      Try adjusting your search criteria or clear filters to see more results.
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ) : (
-                <>
-                  {jobs.map((job, index) => {
-                    // Add individual job validation and error handling
-                    if (!job || !job.id || !job.title) {
-                      console.error(`❌ Invalid job data at index ${index}:`, job);
-                      return null;
-                    }
-                    
-                    try {
-                      return (
-                        <Grid item xs={12} md={6} xl={4} key={job.id}>
-                          <JobCard
-                            job={job}
-                            isSaved={savedJobs.has(job.id)}
-                            onSave={user ? toggleSaveJob : undefined}
-                            showCompanyLogo={true}
-                          />
-                        </Grid>
-                      );
-                    } catch (error) {
-                      console.error(`❌ Error rendering JobCard for ${job.title}:`, error);
-                      // Fallback to simple card if JobCard fails
-                      return (
-                        <Grid item xs={12} md={6} xl={4} key={`fallback-${job.id}`}>
-                          <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.contrastText' }}>
-                            <Typography variant="h6">{job.title}</Typography>
-                            <Typography variant="body2">{job.company?.name || 'Unknown Company'}</Typography>
-                            <Typography variant="caption">Error rendering full job card</Typography>
-                          </Paper>
-                        </Grid>
-                      );
-                    }
-                  })}
-                </>
-              )}
-            </Grid>
+                  {/* Remote Option Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Work Type
+                    </label>
+                    <select
+                      value={remoteFilter}
+                      onChange={(e) => setRemoteFilter(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Types</option>
+                      {remoteOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.icon} {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <Pagination
-                  count={totalPages}
-                  page={page}
-                  onChange={(_, newPage) => setPage(newPage)}
-                  color="primary"
-                  size="large"
-                />
-              </Box>
-            )}
-          </Grid>
-        </Grid>
+                  {/* Sort By Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sort By
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => handleSortChange(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.icon} {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-        {/* Mobile Filter Drawer */}
-        {isMobile && (
-          <Drawer
-            anchor="bottom"
-            open={mobileFiltersOpen}
-            onClose={() => setMobileFiltersOpen(false)}
-            PaperProps={{
-              sx: {
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                maxHeight: '90vh',
-              },
-            }}
-          >
-            <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">Filters</Typography>
-              <IconButton onClick={() => setMobileFiltersOpen(false)}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-            <Box sx={{ px: 2, pb: 2 }}>
-              <JobFilters
-                onFiltersChange={(newFilters) => {
-                  handleFiltersChange(newFilters);
-                  setMobileFiltersOpen(false);
-                }}
-                facets={facets}
-                loading={facetsLoading}
-                initialFilters={filters}
-              />
-            </Box>
-          </Drawer>
+                  {/* Clear Filters */}
+                  <div className="flex items-end">
+                    <button
+                      onClick={clearAllFilters}
+                      className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <div className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="text-gray-500">Active filters:</span>
+                {debouncedSearchQuery && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Search: {debouncedSearchQuery}
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="ml-1 text-blue-600 hover:text-blue-800"
+                    >
+                      <XMarkIcon className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+                {locationFilter && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
+                    Location: {locationFilter}
+                    <button
+                      onClick={() => setLocationFilter('')}
+                      className="ml-1 text-cyan-600 hover:text-cyan-800"
+                    >
+                      <XMarkIcon className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+                {jobTypeFilter && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Type: {jobTypes.find(t => t.value === jobTypeFilter)?.label}
+                    <button
+                      onClick={() => setJobTypeFilter('')}
+                      className="ml-1 text-blue-600 hover:text-blue-800"
+                    >
+                      <XMarkIcon className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+                {experienceFilter && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
+                    Experience: {experienceLevels.find(e => e.value === experienceFilter)?.label}
+                    <button
+                      onClick={() => setExperienceFilter('')}
+                      className="ml-1 text-cyan-600 hover:text-cyan-800"
+                    >
+                      <XMarkIcon className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+                {remoteFilter && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Work: {remoteOptions.find(r => r.value === remoteFilter)?.label}
+                    <button
+                      onClick={() => setRemoteFilter('')}
+                      className="ml-1 text-blue-600 hover:text-blue-800"
+                    >
+                      <XMarkIcon className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         )}
-      </Container>
-    </ProtectedRoute>
+
+        {/* Jobs List */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Results Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {loading ? 'Loading jobs...' : `${totalJobs} jobs found`}
+              </h2>
+              {!loading && (
+                <div className="flex items-center space-x-4 mt-1">
+                  <p className="text-gray-600">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalJobs)} of {totalJobs} results (3 per row)
+                  </p>
+                  <span className="text-sm text-gray-500">
+                    Sorted by: {sortOptions.find(s => s.value === sortBy)?.label} ({sortOrder === 'desc' ? 'Desc' : 'Asc'}) • 9 per page
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {!loading && totalJobs > 0 && (
+              <div className="mt-4 sm:mt-0 flex space-x-2">
+                                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="inline-flex items-center px-4 py-2 border border-blue-600 rounded-lg shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <FunnelIcon className="h-4 w-4 mr-2" />
+                    {showFilters ? 'Hide' : 'Show'} Filters
+                  </button>
+              </div>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(9)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                  <div className="h-8 bg-gray-200 rounded w-full"></div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="text-red-600 mb-4">{error}</div>
+              <button
+                onClick={() => fetchJobs(1)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <BriefcaseIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">No jobs found</h3>
+              <p className="text-gray-600 mb-6">
+                {hasActiveFilters 
+                  ? "Try adjusting your search criteria or clear some filters."
+                  : "Check back later for new opportunities."
+                }
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200"
+                >
+                  Clear All Filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence>
+                  {jobs.map((job, index) => (
+                    <motion.div
+                      key={job.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden ${
+                        job.is_featured ? 'ring-2 ring-yellow-400' : ''
+                      }`}
+                    >
+                      {job.is_featured && (
+                        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-medium px-3 py-1 text-center">
+                          <SparklesIcon className="h-3 w-3 inline mr-1" />
+                          Featured Job
+                        </div>
+                      )}
+                      
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 
+                              className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer line-clamp-2 transition-colors"
+                              onClick={() => router.push(`/jobs/${job.slug || job.id}`)}
+                            >
+                              {job.title}
+                            </h3>
+                          </div>
+                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors ml-2">
+                            <BookmarkIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center text-gray-600">
+                            <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">{job.company.name}</span>
+                          </div>
+                          
+                          {job.location && (
+                            <div className="flex items-center text-gray-600">
+                              <MapPinIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                              <span className="truncate">{job.location.name}</span>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center text-gray-600">
+                            <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span>{formatDate(job.created_at)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {jobTypes.find(t => t.value === job.job_type)?.label || job.job_type}
+                          </span>
+                          {job.remote_option && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {job.remote_option}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center mb-4">
+                          <CurrencyDollarIcon className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-600">{formatSalary(job)}</span>
+                        </div>
+
+                        {job.description && (
+                          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                            {job.description}
+                          </p>
+                        )}
+
+                        {job.required_skills && job.required_skills.length > 0 && (
+                          <div className="mb-4">
+                            <div className="flex flex-wrap gap-1">
+                              {job.required_skills.slice(0, 3).map((skill) => (
+                                <span
+                                  key={skill.id}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
+                                >
+                                  {skill.name}
+                                </span>
+                              ))}
+                              {job.required_skills.length > 3 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                  +{job.required_skills.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex space-x-2 flex-1">
+                            <button
+                              onClick={() => router.push(`/jobs/${job.slug || job.id}`)}
+                              className="px-4 py-2 border border-blue-600 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => handleApply(job)}
+                              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                            >
+                              Apply Now
+                            </button>
+                          </div>
+                          
+                          {job.views_count !== undefined && (
+                            <div className="flex items-center text-xs text-gray-500 ml-3">
+                              <EyeIcon className="h-3 w-3 mr-1" />
+                              {job.views_count}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Pagination */}
+              {totalJobs > 9 && (
+                <div className="mt-12 flex items-center justify-center">
+                  <nav className="flex items-center space-x-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeftIcon className="h-4 w-4" />
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRightIcon className="h-4 w-4" />
+                    </button>
+                  </nav>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </Layout>
   );
 };
 
