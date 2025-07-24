@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useEffect, useState, ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { loginUser, registerUser, logoutUser, fetchUserProfile, clearError, clearAuth } from '../store/slices/authSlice';
@@ -23,6 +23,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   isSuperuser: boolean;
   isStaff: boolean;
+  isAdmin: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,14 +37,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { user, tokens, isAuthenticated, isLoading, error } = useSelector(
     (state: RootState) => state.auth
   );
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Check if user is authenticated on app load
     if (isAuthenticated && tokens?.access) {
       localStorage.setItem('access_token', tokens.access);
       localStorage.setItem('refresh_token', tokens.refresh);
+      
+      // Store user data in localStorage for redirection logic
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Check if we need to redirect based on user type
+        const isAdmin = user.user_type === 'admin' || user.is_staff || user.is_superuser;
+        if (isAdmin && window.location.pathname !== '/admin_dashboard') {
+          window.location.href = '/admin_dashboard';
+        }
+      }
     }
-  }, [isAuthenticated, tokens]);
+  }, [isAuthenticated, tokens, user]);
 
   useEffect(() => {
     // Check for existing tokens on app load
@@ -126,6 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshProfile,
     isSuperuser: user?.is_superuser || false,
     isStaff: user?.is_staff || false,
+    isAdmin: user?.user_type === 'admin' || user?.is_staff || user?.is_superuser || false,
   };
 
   return (

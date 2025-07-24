@@ -36,6 +36,7 @@ interface Job {
     name: string;
   };
   location: {
+    id?: string;
     name: string;
     city: string;
     state: string;

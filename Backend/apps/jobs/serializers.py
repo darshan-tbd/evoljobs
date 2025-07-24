@@ -174,3 +174,51 @@ class JobAlertSerializer(serializers.ModelSerializer):
         model = JobAlert
         fields = '__all__'
         read_only_fields = ['user', 'last_sent'] 
+
+class AdminJobPostingSerializer(serializers.ModelSerializer):
+    """Admin serializer for job postings with full access"""
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    location_name = serializers.CharField(source='location.name', read_only=True)
+    industry_name = serializers.CharField(source='industry.name', read_only=True)
+    posted_by_name = serializers.CharField(source='posted_by.get_full_name', read_only=True)
+    required_skills = serializers.StringRelatedField(many=True, read_only=True)
+    preferred_skills = serializers.StringRelatedField(many=True, read_only=True)
+    applications_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = JobPosting
+        fields = '__all__'
+    
+    def get_applications_count(self, obj):
+        return obj.applications.count()
+
+class AdminJobViewSerializer(serializers.ModelSerializer):
+    """Admin serializer for job views with full access"""
+    job_title = serializers.CharField(source='job.title', read_only=True)
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = JobView
+        fields = '__all__'
+
+class AdminSavedJobSerializer(serializers.ModelSerializer):
+    """Admin serializer for saved jobs with full access"""
+    job_title = serializers.CharField(source='job.title', read_only=True)
+    company_name = serializers.CharField(source='job.company.name', read_only=True)
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = SavedJob
+        fields = '__all__'
+
+class AdminJobAlertSerializer(serializers.ModelSerializer):
+    """Admin serializer for job alerts with full access"""
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    location_name = serializers.CharField(source='location.name', read_only=True)
+    
+    class Meta:
+        model = JobAlert
+        fields = '__all__' 

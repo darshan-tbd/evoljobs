@@ -13,7 +13,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
-import Layout from '../../../components/Layout';
+import Layout from '@/components/layout/Layout';
 
 interface Job {
   id: number;

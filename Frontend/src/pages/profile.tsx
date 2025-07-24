@@ -1,44 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  TextField,
-  Button,
-  Avatar,
-  Alert,
-  Paper,
-  Divider,
-  Chip,
-  CircularProgress,
-} from '@mui/material';
-import {
-  Person as PersonIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Email as EmailIcon,
-  Business as BusinessIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../hooks/useAuth';
-import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
+import { useAuth } from '@/hooks/useAuth';
+import { motion } from 'framer-motion';
+import { 
+  UserIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  MapPinIcon,
+  BriefcaseIcon,
+  AcademicCapIcon,
+  DocumentTextIcon,
+  CameraIcon,
+  PencilIcon,
+  CheckIcon,
+  XMarkIcon,
+  ExclamationTriangleIcon,
+  GlobeAltIcon,
+  LinkIcon,
+  StarIcon,
+  ShieldCheckIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  CogIcon,
+  BellIcon
+} from '@heroicons/react/24/outline';
+import Layout from '@/components/layout/Layout';
+
+interface ProfileFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  location: string;
+  bio: string;
+  skills: string;
+  experience: string;
+  education: string;
+  website: string;
+  linkedin: string;
+  github: string;
+  resume?: string;
+}
+
+interface Resume {
+  id: string;
+  original_filename: string;
+  file_url: string;
+  file_size_display: string;
+  parsing_status_display: string;
+  is_primary: boolean;
+  created_at: string;
+  parsing_status: string;
+  confidence_score?: number;
+}
 
 const ProfilePage: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAuthenticated, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProfileFormData>({
     first_name: '',
     last_name: '',
     email: '',
@@ -47,53 +73,93 @@ const ProfilePage: React.FC = () => {
     bio: '',
     skills: '',
     experience: '',
+    education: '',
+    website: '',
+    linkedin: '',
+    github: '',
+    resume: ''
   });
+  
+  const [userResumes, setUserResumes] = useState<Resume[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState<string>('');
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        location: user.location || '',
-        bio: user.bio || '',
-        skills: user.skills || '',
-        experience: user.experience || '',
-      });
+      fetchProfileData();
+      fetchUserResumes();
     }
   }, [user]);
 
-  // Check for token validity on page load
-  useEffect(() => {
-    const checkTokenValidity = async () => {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        try {
-          const response = await fetch('http://127.0.0.1:8000/api/v1/auth/profile/', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (response.status === 401) {
-            // Token is invalid, clear it
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            setError('Your session has expired. Redirecting to login...');
-            setTimeout(() => {
-              router.push('/login?redirect=' + encodeURIComponent(router.asPath));
-            }, 2000);
+  const fetchProfileData = async () => {
+    try {
+      setProfileLoading(true);
+      const response = await fetch('http://127.0.0.1:8000/api/v1/auth/profile/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const profileData = await response.json();
+        setFormData({
+          first_name: profileData.first_name || '',
+          last_name: profileData.last_name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          location: profileData.location || '',
+          bio: profileData.bio || '',
+          skills: profileData.skills || '',
+          experience: profileData.experience || '',
+          education: profileData.education || '',
+          website: profileData.website || '',
+          linkedin: profileData.linkedin_url || '',
+          github: profileData.github_url || '',
+          resume: profileData.resume || ''
+        });
+        
+        // Set selected resume to primary resume if available
+        if (userResumes.length > 0) {
+          const primaryResume = userResumes.find(resume => resume.is_primary);
+          if (primaryResume) {
+            setSelectedResumeId(primaryResume.id);
           }
-        } catch (err) {
-          console.error('Token validation error:', err);
         }
       }
-    };
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
-    checkTokenValidity();
-  }, [router]);
+  const fetchUserResumes = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/v1/resumes/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (response.ok) {
+        const data = await response.json();
+        setUserResumes(data.results || []);
+        
+        // Set selected resume to primary resume if available
+        if (data.results && data.results.length > 0) {
+          const primaryResume = data.results.find((resume: Resume) => resume.is_primary);
+          if (primaryResume) {
+            setSelectedResumeId(primaryResume.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user resumes:', error);
+    }
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormData(prev => ({
       ...prev,
@@ -107,423 +173,980 @@ const ProfilePage: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('access_token');
       const response = await fetch('http://127.0.0.1:8000/api/v1/auth/profile/', {
         method: 'PUT',
         headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email,
+          phone: formData.phone,
+          location: formData.location,
+          bio: formData.bio,
+          skills: formData.skills,
+          experience: formData.experience,
+          website: formData.website,
+          linkedin_url: formData.linkedin,
+          github_url: formData.github
+        }),
       });
 
       if (response.ok) {
-        setSuccess('Profile updated successfully!');
-        setEditing(false);
-        // You might want to refresh user data here
+        const updatedUser = await response.json();
+      setSuccess('Profile updated successfully!');
+      setEditing(false);
+        await refreshProfile();
+      setTimeout(() => setSuccess(''), 3000);
       } else {
-        if (response.status === 401) {
-          // Token is invalid or expired, clear it and redirect to login
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          setError('Your session has expired. Please log in again.');
-          setTimeout(() => {
-            router.push('/login?redirect=' + encodeURIComponent(router.asPath));
-          }, 2000);
-          return;
-        }
         const errorData = await response.json();
         setError(errorData.detail || 'Failed to update profile');
       }
-    } catch (err) {
-      setError('Failed to update profile. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (user) {
-      setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        location: user.location || '',
-        bio: user.bio || '',
-        skills: user.skills || '',
-        experience: user.experience || '',
-      });
-    }
     setEditing(false);
     setError('');
     setSuccess('');
+    fetchProfileData();
   };
 
   const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      try {
+        setLoading(true);
+        setError('');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('is_primary', 'true');
+        
+        const response = await fetch('http://127.0.0.1:8000/api/v1/resumes/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSuccess('Resume uploaded successfully!');
+          setTimeout(() => setSuccess(''), 3000);
+          
+          // Refresh resumes and profile data
+          await fetchUserResumes();
+          await fetchProfileData();
+        } else {
+          let errorMessage = 'Failed to upload resume';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.detail || errorMessage;
+          } catch (e) {
+            // If response is not JSON, use the status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          setError(errorMessage);
+        }
+      } catch (err: any) {
+        console.error('Resume upload error:', err);
+        setError(err.message || 'Failed to upload resume');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
+  const handleResumeSelection = (resumeId: string) => {
+    setSelectedResumeId(resumeId);
+  };
 
+  const handleSetPrimaryResume = async (resumeId: string) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('title', `Resume - ${file.name}`);
-
-      const response = await fetch('http://localhost:8000/api/v1/resumes/', {
+      setLoading(true);
+      setError('');
+      
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/resumes/${resumeId}/set_primary/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
         },
-        body: formData,
       });
-
-      const data = await response.json();
       
-      if (data.success) {
-        setSuccess('Resume uploaded and parsed successfully! You can now use the CV Builder.');
+      if (response.ok) {
+        setSuccess('Primary resume updated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+        
+        // Refresh resumes
+        await fetchUserResumes();
       } else {
-        setError(data.message || 'Failed to upload resume');
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to set primary resume');
       }
-    } catch (error) {
-      console.error('Resume upload error:', error);
-      setError('Failed to upload resume. Please try again.');
+    } catch (err: any) {
+      console.error('Set primary resume error:', err);
+      setError(err.message || 'Failed to set primary resume');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user) {
+  const handleDeleteResume = async (resumeId: string) => {
+    if (!confirm('Are you sure you want to delete this resume?')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/resumes/${resumeId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        setSuccess('Resume deleted successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+        
+        // Refresh resumes
+        await fetchUserResumes();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to delete resume');
+      }
+    } catch (err: any) {
+      console.error('Delete resume error:', err);
+      setError(err.message || 'Failed to delete resume');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isAuthenticated) {
     return (
       <Layout>
-        <ProtectedRoute>
-          <Container maxWidth="md" sx={{ py: 4 }}>
-            <CircularProgress />
-          </Container>
-        </ProtectedRoute>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+            <p className="text-gray-600 mb-6">Please log in to access your profile.</p>
+            <button
+              onClick={() => router.push('/login')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
       </Layout>
     );
   }
 
+  const tabs = [
+    { id: 'overview', name: 'Overview', icon: UserIcon },
+    { id: 'personal', name: 'Personal Info', icon: UserIcon },
+    { id: 'professional', name: 'Professional', icon: BriefcaseIcon },
+    { id: 'education', name: 'Education', icon: AcademicCapIcon },
+    { id: 'resume', name: 'Resume', icon: DocumentTextIcon },
+    { id: 'settings', name: 'Settings', icon: CogIcon }
+  ];
+
   return (
     <Layout>
-      <ProtectedRoute>
-        <Container maxWidth="md" sx={{ py: 4 }}>
-          {/* Header */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              My Profile
-            </Typography>
-            <Typography variant="h6" color="textSecondary">
-              Manage your personal information and preferences
-            </Typography>
-          </Box>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+                <p className="text-gray-600 mt-2">Manage your professional profile and preferences</p>
+              </div>
+              <div className="flex space-x-3">
+                {!editing ? (
+                  <button
+                    onClick={() => setEditing(true)}
+                    disabled={profileLoading}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
+                  >
+                    <PencilIcon className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </button>
+                ) : (
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleCancel}
+                      className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckIcon className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-          {/* Success/Error Messages */}
-          {success && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {success}
-            </Alert>
-          )}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          {/* Profile Header Card */}
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Avatar sx={{ width: 80, height: 80, fontSize: '2rem' }}>
-                {user.first_name?.[0] || user.email?.[0] || 'U'}
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h5" gutterBottom>
-                  {user.first_name} {user.last_name}
-                </Typography>
-                <Typography variant="body1" color="textSecondary" gutterBottom>
-                  {user.email}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Chip
-                    label={(user.user_type || 'job_seeker').replace('_', ' ').toUpperCase()}
-                    color="primary"
-                    size="small"
-                  />
-                                      <Chip
-                      label={user.is_active !== false ? 'Active' : 'Inactive'}
-                      color={user.is_active !== false ? 'success' : 'error'}
-                      size="small"
-                    />
-                </Box>
-              </Box>
-              <Button
-                variant={editing ? "outlined" : "contained"}
-                startIcon={editing ? <CancelIcon /> : <EditIcon />}
-                onClick={editing ? handleCancel : () => setEditing(true)}
-                disabled={loading}
+        {/* Success/Error Messages */}
+        {(success || error) && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center"
               >
-                {editing ? 'Cancel' : 'Edit Profile'}
-              </Button>
-            </Box>
-          </Paper>
+                <CheckIcon className="h-5 w-5 mr-2" />
+                {success}
+              </motion.div>
+            )}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center"
+              >
+                <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                {error}
+              </motion.div>
+            )}
+          </div>
+        )}
 
-          {/* Profile Form */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Personal Information
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
+        {/* Navigation Tabs */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex space-x-8 overflow-x-auto">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <tab.icon className="h-5 w-5" />
+                  <span>{tab.name}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="First Name"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleInputChange}
-                    disabled={!editing}
-                    InputProps={{
-                      startAdornment: <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Last Name"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleInputChange}
-                    disabled={!editing}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {profileLoading ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading profile data...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'overview' && (
+                <div className="space-y-8">
+                  {/* Profile Overview Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <UserIcon className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Profile Completeness</p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {(() => {
+                              const fields = [
+                                formData.first_name, formData.last_name, formData.email,
+                                formData.phone, formData.location, formData.bio,
+                                formData.skills, formData.experience, formData.education
+                              ];
+                              const filledFields = fields.filter(field => field && field.trim() !== '').length;
+                              return Math.round((filledFields / fields.length) * 100);
+                            })()}%
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <DocumentTextIcon className="h-8 w-8 text-green-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Resume Status</p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {userResumes.length > 0 ? `${userResumes.length} Uploaded` : 'Not Uploaded'}
+                          </p>
+                          {userResumes.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {userResumes.find(r => r.is_primary)?.original_filename || 'No primary resume'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.2 }}
+                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <StarIcon className="h-8 w-8 text-yellow-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Skills Listed</p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {formData.skills ? formData.skills.split(',').filter(skill => skill.trim() !== '').length : 0}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.3 }}
+                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                    >
+                                              <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <LinkIcon className="h-8 w-8 text-purple-600" />
+                          </div>
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-600">Social Links</p>
+                            <p className="text-2xl font-bold text-gray-900">
+                              {[formData.website, formData.linkedin, formData.github].filter(link => link && link.trim() !== '').length}
+                            </p>
+                          </div>
+                        </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Profile Information */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Basic Info */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200"
+                    >
+                      <div className="px-6 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                      </div>
+                      <div className="p-6">
+                        <div className="flex items-center space-x-4 mb-6">
+                          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-10 w-10 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-semibold text-gray-900">
+                              {formData.first_name} {formData.last_name}
+                            </h4>
+                            <p className="text-gray-600">{formData.email}</p>
+                            {formData.location && (
+                              <p className="text-gray-500 flex items-center mt-1">
+                                <MapPinIcon className="h-4 w-4 mr-1" />
+                                {formData.location}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {formData.bio && (
+                          <div className="mb-6">
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Bio</h5>
+                            <p className="text-gray-600">{formData.bio}</p>
+                          </div>
+                        )}
+
+                        {formData.skills && (
+                          <div className="mb-6">
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Skills</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {formData.skills.split(',').map((skill, index) => (
+                                <span
+                                  key={index}
+                                  className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                                >
+                                  {skill.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+
+                    {/* Quick Actions */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.1 }}
+                      className="bg-white rounded-lg shadow-sm border border-gray-200"
+                    >
+                      <div className="px-6 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                      </div>
+                      <div className="p-6 space-y-4">
+                        <button
+                          onClick={() => setActiveTab('resume')}
+                          className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center">
+                            <DocumentTextIcon className="h-5 w-5 text-blue-600 mr-3" />
+                            <span className="text-sm font-medium text-gray-900">Upload Resume</span>
+                          </div>
+                          <CameraIcon className="h-4 w-4 text-gray-400" />
+                        </button>
+
+                        <button
+                          onClick={() => setActiveTab('professional')}
+                          className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center">
+                            <BriefcaseIcon className="h-5 w-5 text-green-600 mr-3" />
+                            <span className="text-sm font-medium text-gray-900">Update Experience</span>
+                          </div>
+                          <PencilIcon className="h-4 w-4 text-gray-400" />
+                        </button>
+
+                        <button
+                          onClick={() => setActiveTab('settings')}
+                          className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center">
+                            <CogIcon className="h-5 w-5 text-purple-600 mr-3" />
+                            <span className="text-sm font-medium text-gray-900">Privacy Settings</span>
+                          </div>
+                          <ShieldCheckIcon className="h-4 w-4 text-gray-400" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              )}
+
+          {activeTab === 'personal' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleInputChange}
+                      disabled={!editing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                      disabled={!editing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
                     type="email"
+                    name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={!editing}
-                    InputProps={{
-                      startAdornment: <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Phone"
+                </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     disabled={!editing}
-                    InputProps={{
-                      startAdornment: <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Location"
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
                     name="location"
                     value={formData.location}
                     onChange={handleInputChange}
                     disabled={!editing}
-                    InputProps={{
-                      startAdornment: <LocationIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                    }}
+                    placeholder="City, State, Country"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="Bio"
+                      </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
                     name="bio"
                     value={formData.bio}
                     onChange={handleInputChange}
                     disabled={!editing}
+                    rows={4}
                     placeholder="Tell us about yourself..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </Grid>
-                
-                {(user.user_type === 'job_seeker' || !user.user_type) && (
-                  <>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Skills"
-                        name="skills"
-                        value={formData.skills}
-                        onChange={handleInputChange}
-                        disabled={!editing}
-                        placeholder="List your skills (e.g., JavaScript, React, Node.js)"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label="Experience"
-                        name="experience"
-                        value={formData.experience}
-                        onChange={handleInputChange}
-                        disabled={!editing}
-                        placeholder="Describe your work experience..."
-                      />
-                    </Grid>
-                  </>
-                )}
-              </Grid>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-              {editing && (
-                <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-                    onClick={handleSave}
-                    disabled={loading}
-                  >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<CancelIcon />}
-                    onClick={handleCancel}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </Button>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Account Info */}
-          <Card sx={{ mt: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Account Information
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-              
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="textSecondary">
-                    Member Since
-                  </Typography>
-                  <Typography variant="body1">
-                    {user.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'N/A'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="textSecondary">
-                    Last Login
-                  </Typography>
-                  <Typography variant="body1">
-                    {user.last_login 
-                      ? new Date(user.last_login).toLocaleDateString()
-                      : 'Never'
-                    }
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="textSecondary">
-                    Email Verified
-                  </Typography>
-                  <Chip
-                    label={user.is_verified === true ? 'Verified' : 'Not Verified'}
-                    color={user.is_verified === true ? 'success' : 'warning'}
-                    size="small"
+          {activeTab === 'professional' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Professional Information</h3>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Skills
+                  </label>
+                  <textarea
+                    name="skills"
+                    value={formData.skills}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    rows={3}
+                        placeholder="Enter your skills (comma-separated)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="textSecondary">
-                    Account Type
-                  </Typography>
-                                      <Chip
-                      label={(user.user_type || 'job_seeker').replace('_', ' ').toUpperCase()}
-                      color="primary"
-                      size="small"
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Work Experience
+                  </label>
+                  <textarea
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                        rows={6}
+                    placeholder="Describe your work experience..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      disabled={!editing}
+                      placeholder="https://yourwebsite.com"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                     />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      LinkedIn
+                    </label>
+                    <input
+                      type="url"
+                      name="linkedin"
+                      value={formData.linkedin}
+                      onChange={handleInputChange}
+                      disabled={!editing}
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      GitHub
+                    </label>
+                    <input
+                      type="url"
+                      name="github"
+                      value={formData.github}
+                      onChange={handleInputChange}
+                      disabled={!editing}
+                      placeholder="https://github.com/yourusername"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                </div>
 
-          {/* Resume & CV Builder Section */}
-          <Card sx={{ mt: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PersonIcon />
-                Resume & CV Builder
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" gutterBottom>
-                      Upload Resume
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" paragraph>
-                      Upload your existing resume to extract and structure your information automatically.
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      sx={{ mb: 2 }}
-                    >
-                      Choose Resume File
-                      <input
-                        type="file"
-                        hidden
-                        accept=".pdf,.doc,.docx,.txt"
-                        onChange={handleResumeUpload}
-                      />
-                    </Button>
-                    <Typography variant="caption" display="block" color="textSecondary">
-                      Supported formats: PDF, DOC, DOCX, TXT
-                    </Typography>
-                  </Paper>
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" gutterBottom>
-                      Build Professional CV
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" paragraph>
-                      Create a professional CV using our template builder with your structured data.
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={() => router.push('/cv-builder')}
-                      sx={{ mb: 2 }}
-                    >
-                      Open CV Builder
-                    </Button>
-                    <Typography variant="caption" display="block" color="textSecondary">
-                      Multiple templates available
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Container>
-      </ProtectedRoute>
+                {/* Resume Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selected Resume
+                  </label>
+                  {userResumes.length > 0 ? (
+                    <div className="flex items-center space-x-3">
+                      <select
+                        value={selectedResumeId}
+                        onChange={(e) => handleResumeSelection(e.target.value)}
+                        disabled={!editing}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                      >
+                        <option value="">Select a resume</option>
+                        {userResumes.map((resume) => (
+                          <option key={resume.id} value={resume.id}>
+                            {resume.original_filename} {resume.is_primary ? '(Primary)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedResumeId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const resume = userResumes.find(r => r.id === selectedResumeId);
+                            if (resume) {
+                              window.open(resume.file_url, '_blank');
+                            }
+                          }}
+                          className="px-3 py-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          View
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">
+                      No resumes uploaded. 
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('resume')}
+                        className="text-blue-600 hover:text-blue-700 ml-1"
+                      >
+                        Upload your first resume
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'education' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Education</h3>
+              </div>
+              <div className="p-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Education Background
+                  </label>
+                  <textarea
+                    name="education"
+                    value={formData.education}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    rows={6}
+                    placeholder="Enter your educational background, degrees, certifications, etc."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'resume' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Resume Management</h3>
+              </div>
+              <div className="p-6">
+                {/* Resume Selection for Profile */}
+                {userResumes.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-sm font-medium text-gray-900 mb-4">Select Resume for Profile</h4>
+                    <div className="space-y-3">
+                      {userResumes.map((resume) => (
+                        <div 
+                          key={resume.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                            selectedResumeId === resume.id 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                          }`}
+                          onClick={() => handleResumeSelection(resume.id)}
+                        >
+                          <div className="flex items-center">
+                            <input
+                              type="radio"
+                              name="selectedResume"
+                              checked={selectedResumeId === resume.id}
+                              onChange={() => handleResumeSelection(resume.id)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <DocumentTextIcon className="h-5 w-5 text-blue-600 mr-3 ml-3" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{resume.original_filename}</p>
+                              <p className="text-xs text-gray-500">
+                                {resume.file_size_display} • {resume.parsing_status_display}
+                                {resume.confidence_score && ` • ${Math.round(resume.confidence_score * 100)}% confidence`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {resume.is_primary && (
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                                Primary
+                              </span>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(resume.file_url, '_blank');
+                              }}
+                              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            >
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 flex space-x-3">
+                      <button
+                        onClick={() => handleSetPrimaryResume(selectedResumeId)}
+                        disabled={!selectedResumeId || loading}
+                        className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                      >
+                        Set as Primary
+                      </button>
+                      <button
+                        onClick={() => handleDeleteResume(selectedResumeId)}
+                        disabled={!selectedResumeId || loading}
+                        className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                      >
+                        Delete Selected
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload new resume */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {userResumes.length > 0 ? 'Upload another resume' : 'Upload your resume'}
+                  </h3>
+                  <p className="text-gray-600 mb-4">PDF, DOC, or DOCX files accepted (max 10MB)</p>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleResumeUpload}
+                    disabled={loading}
+                    className="hidden"
+                    id="resume-upload"
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg cursor-pointer inline-flex items-center"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <CameraIcon className="h-4 w-4 mr-2" />
+                        Choose File
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                {/* Resume Status Summary */}
+                {userResumes.length > 0 && (
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Resume Status</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Total Resumes:</span>
+                        <span className="ml-2 font-medium">{userResumes.length}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Primary Resume:</span>
+                        <span className="ml-2 font-medium">
+                          {userResumes.find(r => r.is_primary)?.original_filename || 'None'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Selected for Profile:</span>
+                        <span className="ml-2 font-medium">
+                          {userResumes.find(r => r.id === selectedResumeId)?.original_filename || 'None'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+              {activeTab === 'settings' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200"
+                >
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Account Information</h3>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Account Type</h4>
+                        <p className="text-sm text-gray-500">Your account classification</p>
+                      </div>
+                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                        {user?.user_type || 'Job Seeker'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Account Status</h4>
+                        <p className="text-sm text-gray-500">Current account status</p>
+                      </div>
+                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                        {user?.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Email Verification</h4>
+                        <p className="text-sm text-gray-500">Email verification status</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        user?.is_verified 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {user?.is_verified ? 'Verified' : 'Pending'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Member Since</h4>
+                        <p className="text-sm text-gray-500">Account creation date</p>
+                      </div>
+                      <span className="text-gray-600 text-sm">
+                        {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <button className="text-red-600 hover:text-red-700 text-sm font-medium">
+                        Delete Account
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </Layout>
   );
 };

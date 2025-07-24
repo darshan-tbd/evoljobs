@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../components/Layout';
+import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import CVBuilder from '../components/CVBuilder';
 

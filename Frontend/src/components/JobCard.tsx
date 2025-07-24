@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { useRouter } from 'next/router';
+import toast from 'react-hot-toast';
 import {
   Card,
   CardContent,
@@ -25,7 +26,7 @@ import {
   Bookmark as BookmarkIcon,
   BookmarkBorder as BookmarkBorderIcon,
   Schedule as ScheduleIcon,
-  Trending as TrendingIcon,
+  TrendingUp as TrendingIcon,
   NewReleases as NewIcon,
   Warning as UrgentIcon,
   Launch as LaunchIcon,
@@ -191,7 +192,16 @@ const JobCard: React.FC<JobCardProps> = memo(({
     router.push(`/jobs/${job.slug}`);
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
+    // Check if user is authenticated first
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      // Redirect to login page with current page as redirect parameter
+      router.push(`/login?redirect=${encodeURIComponent(router.asPath)}`);
+      toast.error('Please log in to apply for this job');
+      return;
+    }
+
     if (onApply) {
       onApply(job.id);
     } else {
@@ -200,20 +210,67 @@ const JobCard: React.FC<JobCardProps> = memo(({
       
       if (applicationUrl && applicationUrl.trim() !== '') {
         try {
-          // Ensure URL has proper protocol
+          // First, create external application entry
+          await trackExternalApplication(job.id, applicationUrl);
+          
+          // Show success message
+          toast.success('Application tracked! Redirecting to external site...');
+          
+          // Then redirect to external URL
           const url = applicationUrl.startsWith('http') 
             ? applicationUrl 
             : `https://${applicationUrl}`;
           window.open(url, '_blank', 'noopener,noreferrer');
         } catch (error) {
-          console.error('Invalid application URL:', applicationUrl);
-          // Fallback to internal apply page
-          router.push(`/jobs/${job.slug}/apply`);
+          console.error('Failed to track external application:', error);
+          toast.error('Failed to track application. Please try again.');
         }
       } else {
-        // Fallback to internal apply page
-        router.push(`/jobs/${job.slug}/apply`);
+        // Redirect to full application form (same as job details page)
+        router.push(`/jobs/${job.slug || job.id}/apply`);
       }
+    }
+  };
+
+
+
+  const trackExternalApplication = async (jobId: string, externalUrl: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      // Authentication is already checked in handleApply, so token should exist
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch('http://127.0.0.1:8000/api/v1/applications/external-applications/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          job: jobId,
+          external_url: externalUrl
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('External application created successfully:', data);
+        return data;
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to create external application:', errorData);
+        
+        if (errorData.error === 'You have already applied to this job') {
+          throw new Error('You have already applied to this job!');
+        } else {
+          throw new Error(errorData.error || 'Failed to track external application');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to track external application:', error);
+      throw error; // Re-throw to be handled by caller
     }
   };
 

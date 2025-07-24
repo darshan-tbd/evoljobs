@@ -1,339 +1,306 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth import get_user_model
+from .models import Notification, NotificationPreference, NotificationTemplate, NotificationChannel, NotificationDelivery
+from .serializers import NotificationSerializer, NotificationPreferenceSerializer, NotificationTemplateSerializer, NotificationChannelSerializer, NotificationDeliverySerializer
+from .serializers import AdminNotificationSerializer, AdminNotificationPreferenceSerializer, AdminNotificationTemplateSerializer, AdminNotificationChannelSerializer, AdminNotificationDeliverySerializer
+from django.db.models import Q, Count
 from django.utils import timezone
-from django.db.models import Q
-from .models import Notification, NotificationPreference
-from .serializers import NotificationSerializer, NotificationPreferenceSerializer
-from .services import notification_service
+from datetime import timedelta
 
-User = get_user_model()
-
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for managing user notifications
-    """
+class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        """Get notifications for the current user"""
-        return Notification.objects.filter(
-            user=self.request.user,
-            is_dismissed=False
-        ).exclude(
-            expires_at__lt=timezone.now()
-        ).order_by('-created_at')
+        return Notification.objects.filter(user=self.request.user)
+
+class NotificationPreferenceViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationPreferenceSerializer
+    permission_classes = [permissions.IsAuthenticated]
     
-    @action(detail=False, methods=['get'])
-    def unread(self, request):
-        """
-        Get unread notifications
-        GET /api/v1/notifications/unread/
-        """
-        notifications = self.get_queryset().filter(is_read=False)
-        page = self.paginate_queryset(notifications)
+    def get_queryset(self):
+        return NotificationPreference.objects.filter(user=self.request.user)
+
+class NotificationTemplateViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class NotificationChannelViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationChannelSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class NotificationDeliveryViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationDeliverySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class AdminNotificationViewSet(viewsets.ModelViewSet):
+    """
+    Admin viewset for managing all notifications
+    """
+    serializer_class = AdminNotificationSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = Notification.objects.all()
+    
+    def get_queryset(self):
+        queryset = Notification.objects.all().select_related('user')
         
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        # Search functionality
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(message__icontains=search) |
+                Q(user__email__icontains=search) |
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search)
+            )
         
-        serializer = self.get_serializer(notifications, many=True)
-        return Response({
-            'results': serializer.data,
-            'count': notifications.count()
-        })
+        # Filter by notification type
+        notification_type = self.request.query_params.get('notification_type', None)
+        if notification_type:
+            queryset = queryset.filter(notification_type=notification_type)
+        
+        # Filter by priority
+        priority = self.request.query_params.get('priority', None)
+        if priority:
+            queryset = queryset.filter(priority=priority)
+        
+        # Filter by read status
+        is_read = self.request.query_params.get('is_read', None)
+        if is_read is not None:
+            if is_read.lower() == 'true':
+                queryset = queryset.filter(is_read=True)
+            elif is_read.lower() == 'false':
+                queryset = queryset.filter(is_read=False)
+        
+        # Filter by sent status
+        is_sent = self.request.query_params.get('is_sent', None)
+        if is_sent is not None:
+            if is_sent.lower() == 'true':
+                queryset = queryset.filter(is_sent=True)
+            elif is_sent.lower() == 'false':
+                queryset = queryset.filter(is_sent=False)
+        
+        # Filter by user
+        user = self.request.query_params.get('user', None)
+        if user:
+            queryset = queryset.filter(user_id=user)
+        
+        # Filter by date range
+        date_from = self.request.query_params.get('date_from', None)
+        date_to = self.request.query_params.get('date_to', None)
+        if date_from:
+            queryset = queryset.filter(created_at__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(created_at__date__lte=date_to)
+        
+        return queryset.order_by('-created_at')
     
-    @action(detail=False, methods=['get'])
-    def unread_count(self, request):
-        """
-        Get unread notification count
-        GET /api/v1/notifications/unread_count/
-        """
-        count = notification_service.get_unread_count(request.user)
-        return Response({'count': count})
-    
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['patch'])
     def mark_read(self, request, pk=None):
-        """
-        Mark specific notification as read
-        POST /api/v1/notifications/{id}/mark_read/
-        """
-        try:
-            notification = self.get_object()
-            notification.mark_as_read()
-            
-            # Get updated count
-            unread_count = notification_service.get_unread_count(request.user)
-            
-            return Response({
-                'success': True,
-                'message': 'Notification marked as read',
-                'unread_count': unread_count
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        """Mark notification as read"""
+        notification = self.get_object()
+        notification.mark_as_read()
+        
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['patch'])
     def mark_unread(self, request, pk=None):
-        """
-        Mark specific notification as unread
-        POST /api/v1/notifications/{id}/mark_unread/
-        """
-        try:
-            notification = self.get_object()
-            notification.mark_as_unread()
-            
-            # Get updated count
-            unread_count = notification_service.get_unread_count(request.user)
-            
-            return Response({
-                'success': True,
-                'message': 'Notification marked as unread',
-                'unread_count': unread_count
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        """Mark notification as unread"""
+        notification = self.get_object()
+        notification.mark_as_unread()
+        
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data)
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['patch'])
     def dismiss(self, request, pk=None):
-        """
-        Dismiss specific notification
-        POST /api/v1/notifications/{id}/dismiss/
-        """
-        try:
-            notification = self.get_object()
-            notification.dismiss()
-            
-            # Get updated count
-            unread_count = notification_service.get_unread_count(request.user)
-            
-            return Response({
-                'success': True,
-                'message': 'Notification dismissed',
-                'unread_count': unread_count
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        """Dismiss notification"""
+        notification = self.get_object()
+        notification.dismiss()
+        
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data)
     
     @action(detail=False, methods=['post'])
     def mark_all_read(self, request):
-        """
-        Mark all notifications as read
-        POST /api/v1/notifications/mark_all_read/
-        """
-        try:
-            updated = notification_service.mark_all_as_read(request.user)
-            
-            return Response({
-                'success': True,
-                'message': f'Marked {updated} notifications as read',
-                'unread_count': 0
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        """Mark all notifications as read"""
+        user_id = request.data.get('user_id')
+        if user_id:
+            Notification.objects.filter(user_id=user_id, is_read=False).update(
+                is_read=True, read_at=timezone.now()
+            )
+        else:
+            Notification.objects.filter(is_read=False).update(
+                is_read=True, read_at=timezone.now()
+            )
+        
+        return Response({'message': 'All notifications marked as read'})
     
     @action(detail=False, methods=['post'])
     def dismiss_all(self, request):
-        """
-        Dismiss all notifications
-        POST /api/v1/notifications/dismiss_all/
-        """
-        try:
-            updated = self.get_queryset().filter(
-                is_dismissed=False
-            ).update(
-                is_dismissed=True,
-                dismissed_at=timezone.now()
+        """Dismiss all notifications"""
+        user_id = request.data.get('user_id')
+        if user_id:
+            Notification.objects.filter(user_id=user_id, is_dismissed=False).update(
+                is_dismissed=True, dismissed_at=timezone.now()
             )
-            
-            return Response({
-                'success': True,
-                'message': f'Dismissed {updated} notifications',
-                'unread_count': 0
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            Notification.objects.filter(is_dismissed=False).update(
+                is_dismissed=True, dismissed_at=timezone.now()
+            )
+        
+        return Response({'message': 'All notifications dismissed'})
     
     @action(detail=False, methods=['get'])
-    def by_type(self, request):
-        """
-        Get notifications by type
-        GET /api/v1/notifications/by_type/?type=job_alert
-        """
-        notification_type = request.query_params.get('type')
-        if not notification_type:
-            return Response({
-                'error': 'type parameter is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
+    def stats(self, request):
+        """Get notification statistics"""
+        total_notifications = Notification.objects.count()
+        unread_notifications = Notification.objects.filter(is_read=False).count()
+        sent_notifications = Notification.objects.filter(is_sent=True).count()
+        dismissed_notifications = Notification.objects.filter(is_dismissed=True).count()
         
-        notifications = self.get_queryset().filter(
-            notification_type=notification_type
-        )
-        
-        page = self.paginate_queryset(notifications)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(notifications, many=True)
-        return Response({
-            'results': serializer.data,
-            'count': notifications.count()
-        })
-    
-    @action(detail=False, methods=['get'])
-    def summary(self, request):
-        """
-        Get notification summary/statistics
-        GET /api/v1/notifications/summary/
-        """
-        from django.db.models import Count
-        
-        # Get counts by type
-        type_counts = self.get_queryset().values('notification_type').annotate(
-            count=Count('notification_type')
+        # Notification types
+        notification_types = Notification.objects.values('notification_type').annotate(
+            count=Count('id')
         ).order_by('-count')
         
-        # Get counts by status
-        total_count = self.get_queryset().count()
-        unread_count = self.get_queryset().filter(is_read=False).count()
-        read_count = total_count - unread_count
+        # Priority levels
+        priority_levels = Notification.objects.values('priority').annotate(
+            count=Count('id')
+        ).order_by('-count')
         
-        # Get recent notifications
-        recent_notifications = self.get_queryset()[:5]
-        recent_serializer = self.get_serializer(recent_notifications, many=True)
+        # Recent activity
+        today = timezone.now().date()
+        week_ago = today - timedelta(days=7)
+        month_ago = today - timedelta(days=30)
+        
+        new_notifications_today = Notification.objects.filter(created_at__date=today).count()
+        new_notifications_this_week = Notification.objects.filter(created_at__date__gte=week_ago).count()
+        new_notifications_this_month = Notification.objects.filter(created_at__date__gte=month_ago).count()
         
         return Response({
-            'total_count': total_count,
-            'unread_count': unread_count,
-            'read_count': read_count,
-            'type_counts': list(type_counts),
-            'recent_notifications': recent_serializer.data
+            'total_notifications': total_notifications,
+            'unread_notifications': unread_notifications,
+            'sent_notifications': sent_notifications,
+            'dismissed_notifications': dismissed_notifications,
+            'notification_types': notification_types,
+            'priority_levels': priority_levels,
+            'recent_activity': {
+                'new_notifications_today': new_notifications_today,
+                'new_notifications_this_week': new_notifications_this_week,
+                'new_notifications_this_month': new_notifications_this_month,
+            }
+        })
+    
+    @action(detail=False, methods=['get'])
+    def recent_activity(self, request):
+        """Get recent notification activity"""
+        limit = int(request.query_params.get('limit', 10))
+        
+        recent_notifications = Notification.objects.order_by('-created_at')[:limit]
+        
+        return Response({
+            'recent_notifications': AdminNotificationSerializer(recent_notifications, many=True).data,
         })
 
-class NotificationPreferenceViewSet(viewsets.ModelViewSet):
+class AdminNotificationPreferenceViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for managing notification preferences
+    Admin viewset for notification preferences
     """
-    serializer_class = NotificationPreferenceSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = AdminNotificationPreferenceSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = NotificationPreference.objects.all()
     
-    def get_object(self):
-        """Get or create preferences for current user"""
-        preferences, created = NotificationPreference.objects.get_or_create(
-            user=self.request.user,
-            defaults={}
-        )
-        return preferences
-    
-    def list(self, request):
-        """Get current user's preferences"""
-        preferences = self.get_object()
-        serializer = self.get_serializer(preferences)
-        return Response(serializer.data)
-    
-    def update(self, request, *args, **kwargs):
-        """Update notification preferences"""
-        preferences = self.get_object()
-        serializer = self.get_serializer(
-            preferences, 
-            data=request.data, 
-            partial=kwargs.get('partial', False)
-        )
+    def get_queryset(self):
+        queryset = NotificationPreference.objects.all().select_related('user')
         
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'success': True,
-                'message': 'Preferences updated successfully',
-                'data': serializer.data
-            })
+        # Filter by user
+        user = self.request.query_params.get('user', None)
+        if user:
+            queryset = queryset.filter(user_id=user)
         
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+        return queryset.order_by('-created_at')
+
+class AdminNotificationTemplateViewSet(viewsets.ModelViewSet):
+    """
+    Admin viewset for managing notification templates
+    """
+    serializer_class = AdminNotificationTemplateSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = NotificationTemplate.objects.all()
     
-    def partial_update(self, request, *args, **kwargs):
-        """Partially update notification preferences"""
-        kwargs['partial'] = True
-        return self.update(request, *args, **kwargs)
-    
-    @action(detail=False, methods=['post'])
-    def reset_to_defaults(self, request):
-        """
-        Reset preferences to defaults
-        POST /api/v1/notification-preferences/reset_to_defaults/
-        """
-        try:
-            preferences = self.get_object()
-            
-            # Reset to default values
-            for field in preferences._meta.fields:
-                if hasattr(field, 'default') and field.name != 'user':
-                    setattr(preferences, field.name, field.default)
-            
-            preferences.save()
-            
-            serializer = self.get_serializer(preferences)
-            return Response({
-                'success': True,
-                'message': 'Preferences reset to defaults',
-                'data': serializer.data
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=False, methods=['post'])
-    def test_notification(self, request):
-        """
-        Send a test notification
-        POST /api/v1/notification-preferences/test_notification/
-        Body: {"type": "realtime|email|both"}
-        """
-        test_type = request.data.get('type', 'realtime')
+    def get_queryset(self):
+        queryset = NotificationTemplate.objects.all()
         
-        try:
-            notification = notification_service.create_notification(
-                user=request.user,
-                notification_type='system',
-                title='Test Notification',
-                message='This is a test notification to verify your settings are working correctly.',
-                priority='low',
-                action_url='/notifications',
-                action_label='View Notifications',
-                delivery_method=test_type,
-                expires_in_hours=1
+        # Search functionality
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(title_template__icontains=search) |
+                Q(message_template__icontains=search)
             )
-            
-            return Response({
-                'success': True,
-                'message': f'Test notification sent via {test_type}',
-                'notification_id': str(notification.id)
-            })
-        except Exception as e:
-            return Response({
-                'success': False,
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST) 
+        
+        # Filter by notification type
+        notification_type = self.request.query_params.get('notification_type', None)
+        if notification_type:
+            queryset = queryset.filter(notification_type=notification_type)
+        
+        return queryset.order_by('name')
+
+class AdminNotificationChannelViewSet(viewsets.ModelViewSet):
+    """
+    Admin viewset for managing notification channels
+    """
+    serializer_class = AdminNotificationChannelSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = NotificationChannel.objects.all()
+    
+    def get_queryset(self):
+        queryset = NotificationChannel.objects.all()
+        
+        # Search functionality
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(description__icontains=search)
+            )
+        
+        # Filter by channel type
+        channel_type = self.request.query_params.get('channel_type', None)
+        if channel_type:
+            queryset = queryset.filter(channel_type=channel_type)
+        
+        return queryset.order_by('name')
+
+class AdminNotificationDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Admin viewset for notification delivery tracking
+    """
+    serializer_class = AdminNotificationDeliverySerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = NotificationDelivery.objects.all()
+    
+    def get_queryset(self):
+        queryset = NotificationDelivery.objects.all().select_related('notification', 'channel')
+        
+        # Filter by notification
+        notification = self.request.query_params.get('notification', None)
+        if notification:
+            queryset = queryset.filter(notification_id=notification)
+        
+        # Filter by channel
+        channel = self.request.query_params.get('channel', None)
+        if channel:
+            queryset = queryset.filter(channel_id=channel)
+        
+        # Filter by status
+        status_filter = self.request.query_params.get('status', None)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset.order_by('-created_at') 

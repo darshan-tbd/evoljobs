@@ -47,6 +47,10 @@ class JobApplication(BaseModel):
     expected_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     availability_date = models.DateField(null=True, blank=True)
     
+    # External application tracking
+    external_url = models.URLField(blank=True, null=True)  # For external job applications
+    is_external_application = models.BooleanField(default=False)  # Flag to identify external applications
+    
     def __str__(self):
         return f"{self.applicant.get_full_name()} applied for {self.job.title}"
     
@@ -146,4 +150,6 @@ class ApplicationDocument(BaseModel):
         db_table = 'application_documents'
         
     def __str__(self):
-        return f"{self.application} - {self.document_type}: {self.filename}" 
+        return f"{self.application} - {self.document_type}: {self.filename}"
+
+ 

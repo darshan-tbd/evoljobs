@@ -247,3 +247,44 @@ class NotificationFilterSerializer(serializers.Serializer):
         required=False,
         help_text="Filter notifications created before this date"
     ) 
+
+class AdminNotificationSerializer(serializers.ModelSerializer):
+    """Admin serializer for notifications with full access"""
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = Notification
+        fields = '__all__'
+
+class AdminNotificationPreferenceSerializer(serializers.ModelSerializer):
+    """Admin serializer for notification preferences with full access"""
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = NotificationPreference
+        fields = '__all__'
+
+class AdminNotificationTemplateSerializer(serializers.ModelSerializer):
+    """Admin serializer for notification templates with full access"""
+    
+    class Meta:
+        model = NotificationTemplate
+        fields = '__all__'
+
+class AdminNotificationChannelSerializer(serializers.ModelSerializer):
+    """Admin serializer for notification channels with full access"""
+    
+    class Meta:
+        model = NotificationChannel
+        fields = '__all__'
+
+class AdminNotificationDeliverySerializer(serializers.ModelSerializer):
+    """Admin serializer for notification delivery with full access"""
+    notification_title = serializers.CharField(source='notification.title', read_only=True)
+    channel_name = serializers.CharField(source='channel.name', read_only=True)
+    
+    class Meta:
+        model = NotificationDelivery
+        fields = '__all__' 
