@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
 import Layout from '@/components/layout/Layout';
+import SubscriptionLimitWarning from '@/components/SubscriptionLimitWarning';
 
 interface Job {
   id: number;
@@ -272,6 +273,18 @@ const JobApplicationPage: React.FC = () => {
                     </Button>
                     {' '}to continue.
                   </Alert>
+                )}
+
+                {/* Subscription Limit Warning */}
+                {isAuthenticated && job && (
+                  <SubscriptionLimitWarning 
+                    jobId={job.id.toString()} 
+                    onCheckLimit={(canApply) => {
+                      if (!canApply) {
+                        setError('You cannot apply to this job due to subscription limits. Please upgrade your plan or try again tomorrow.');
+                      }
+                    }}
+                  />
                 )}
                 
                 <TextField

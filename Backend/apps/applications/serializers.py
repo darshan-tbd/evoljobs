@@ -17,7 +17,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """
-        Check if user has already applied to this job
+        Check if user has already applied to this job and subscription limits
         """
         if self.context['request'].method == 'POST':
             user = self.context['request'].user
@@ -41,9 +41,28 @@ class JobApplicationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     'You have already applied to this job. You can only apply once per job.'
                 )
-            else:
-                print(f"No existing application found - allowing")
             
+            # Check subscription limits (only for non-external applications)
+            if not is_external:
+                from apps.subscriptions.services import SubscriptionService
+                
+                can_apply = SubscriptionService.can_apply_to_job(user, job)
+                if not can_apply:
+                    daily_limit = SubscriptionService.get_daily_application_limit(user)
+                    remaining = SubscriptionService.get_remaining_applications(user)
+                    
+                    if remaining == 0:
+                        raise serializers.ValidationError(
+                            f'You have reached your daily application limit of {daily_limit} companies. '
+                            f'Please upgrade your subscription to apply to more companies per day.'
+                        )
+                    else:
+                        raise serializers.ValidationError(
+                            f'You have already applied to this company today. '
+                            f'You can apply to {remaining} more companies today.'
+                        )
+            
+            print(f"Application validation passed")
             print(f"=====================================")
         
         return data
