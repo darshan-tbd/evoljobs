@@ -122,7 +122,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     {
       text: 'Subscriptions',
       icon: <CreditCardIcon className="w-5 h-5" />,
-      href: '/admin_dashboard/subscriptions',
+      href: '/admin_dashboard/subscription-management',
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
       hoverColor: 'hover:bg-emerald-100',

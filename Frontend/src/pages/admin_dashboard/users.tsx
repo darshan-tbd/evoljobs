@@ -197,7 +197,7 @@ const AdminUsersPage: React.FC = () => {
 
   const handleToggleActive = async (user: User) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/users/admin-users/${user.id}/toggle_active/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/users/admin-users/${user.id}/toggle-active/`, {
         method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -229,7 +229,7 @@ const AdminUsersPage: React.FC = () => {
 
   const handleToggleVerified = async (user: User) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/users/admin-users/${user.id}/toggle_verified/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/users/admin-users/${user.id}/toggle-verified/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

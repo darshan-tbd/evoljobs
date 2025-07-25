@@ -19,6 +19,7 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import Layout from '@/components/layout/Layout';
+import SubscriptionStatus from '@/components/SubscriptionStatus';
 
 interface DashboardStats {
   totalApplications: number;
@@ -357,6 +358,7 @@ const DashboardPage: React.FC = () => {
                 { id: 'overview', name: 'Overview', icon: ChartBarIcon },
                 { id: 'applications', name: 'Applications', icon: DocumentTextIcon },
                 { id: 'saved', name: 'Saved Jobs', icon: HeartIcon },
+                { id: 'subscription', name: 'Subscription', icon: CogIcon },
                 { id: 'profile', name: 'Profile', icon: UserIcon },
                 { id: 'settings', name: 'Settings', icon: CogIcon }
               ].map((tab) => (
@@ -538,6 +540,29 @@ const DashboardPage: React.FC = () => {
                   </button>
                 </div>
               </motion.div>
+
+              {/* Subscription Status Widget */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="bg-white rounded-lg shadow-sm border border-gray-200"
+              >
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">Subscription Status</h3>
+                    <button
+                      onClick={() => setActiveTab('subscription')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      View details →
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <SubscriptionStatus />
+                </div>
+              </motion.div>
             </div>
           )}
 
@@ -622,6 +647,25 @@ const DashboardPage: React.FC = () => {
                     <p className="text-sm mt-2">Save jobs you're interested in to see them here.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'subscription' && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Subscription & Usage</h3>
+                  <button
+                    onClick={() => router.push('/subscription')}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Manage Subscription →
+                  </button>
+                </div>
+              </div>
+              <div className="p-6">
+                <SubscriptionStatus />
               </div>
             </div>
           )}

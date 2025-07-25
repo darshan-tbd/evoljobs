@@ -17,7 +17,13 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
         return JobApplication.objects.filter(applicant=self.request.user)
     
     def perform_create(self, serializer):
-        serializer.save(applicant=self.request.user)
+        application = serializer.save(applicant=self.request.user)
+        
+        # Record the application in daily usage for subscription tracking
+        # Only for non-external applications
+        if not application.is_external_application:
+            from apps.subscriptions.services import SubscriptionService
+            SubscriptionService.record_application(self.request.user, application.job)
     
     @action(detail=False, methods=['post'])
     def quick_apply(self, request):
