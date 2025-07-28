@@ -18,6 +18,7 @@ import {
   CpuChipIcon,
   GlobeAltIcon,
   CreditCardIcon,
+  LinkIcon,
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
   ChevronDownIcon,
@@ -78,6 +79,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       color: 'text-red-600',
       bgColor: 'bg-red-50',
       hoverColor: 'hover:bg-red-100',
+    },
+    {
+      text: 'Google Integration',
+      icon: <LinkIcon className="w-5 h-5" />,
+      href: '/admin_dashboard/google-integrations',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      hoverColor: 'hover:bg-blue-100',
     },
     {
       text: 'Notifications',

@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Layout from '@/components/layout/Layout';
 import SubscriptionStatus from '@/components/SubscriptionStatus';
+import GoogleIntegrationButton from '@/components/GoogleIntegrationButton';
 
 interface DashboardStats {
   totalApplications: number;
@@ -333,6 +334,7 @@ const DashboardPage: React.FC = () => {
                 <p className="text-gray-600 mt-2">Welcome back, {user?.first_name || user?.email}</p>
               </div>
               <div className="flex space-x-3">
+                <GoogleIntegrationButton />
                 <button
                   onClick={() => router.push('/jobs')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -359,8 +361,7 @@ const DashboardPage: React.FC = () => {
                 { id: 'applications', name: 'Applications', icon: DocumentTextIcon },
                 { id: 'saved', name: 'Saved Jobs', icon: HeartIcon },
                 { id: 'subscription', name: 'Subscription', icon: CogIcon },
-                { id: 'profile', name: 'Profile', icon: UserIcon },
-                { id: 'settings', name: 'Settings', icon: CogIcon }
+                { id: 'profile', name: 'Profile', icon: UserIcon }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -682,17 +683,7 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'settings' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
-              </div>
-              <div className="p-6 text-center text-gray-500">
-                <CogIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p>Settings feature coming soon...</p>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
     </Layout>

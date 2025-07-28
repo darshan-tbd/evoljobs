@@ -10,6 +10,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import UserProfile
+from apps.jobs.models import JobCategory
 
 User = get_user_model()
 
@@ -114,12 +115,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
+    preferred_job_categories = serializers.PrimaryKeyRelatedField(
+        many=True, 
+        queryset=JobCategory.objects.filter(is_active=True),
+        required=False,
+        help_text="List of preferred job category IDs"
+    )
     
     class Meta:
         model = User
         fields = [
             'email', 'first_name', 'last_name', 'user_type',
-            'password', 'password_confirm'
+            'password', 'password_confirm', 'preferred_job_categories'
         ]
     
     def validate(self, attrs):
@@ -131,6 +138,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Remove password_confirm from validated_data
         validated_data.pop('password_confirm', None)
         
+        # Extract preferred job categories before creating user
+        preferred_categories = validated_data.pop('preferred_job_categories', [])
+        
         # Create user
         user = User.objects.create_user(
             email=validated_data['email'],
@@ -139,6 +149,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             user_type=validated_data.get('user_type', 'job_seeker'),
             password=validated_data['password']
         )
+        
+        # Set preferred job categories
+        if preferred_categories:
+            user.preferred_job_categories.set(preferred_categories)
         
         # Create user profile
         UserProfile.objects.create(

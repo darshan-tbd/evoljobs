@@ -10,6 +10,25 @@ from apps.companies.models import Company
 
 User = get_user_model()
 
+class JobCategory(BaseModel):
+    """
+    Job category model for categorizing jobs
+    """
+    name = models.CharField(max_length=100, unique=True, help_text="Category name (e.g., 'Full Stack Developer', 'Plumber', 'Cook')")
+    slug = models.SlugField(unique=True, help_text="URL-friendly version of the category name")
+    description = models.TextField(blank=True, help_text="Optional description of the category")
+    keywords = models.TextField(blank=True, help_text="Comma-separated keywords for automatic categorization")
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'job_categories'
+        verbose_name = 'Job Category'
+        verbose_name_plural = 'Job Categories'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
 class JobPosting(BaseModel):
     """
     Job posting model
@@ -51,6 +70,9 @@ class JobPosting(BaseModel):
     description = models.TextField()
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='job_postings')
     posted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs')
+    
+    # Job categorization
+    job_category = models.ForeignKey(JobCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='job_postings', help_text="Automatically assigned job category")
     
     # Job details
     job_type = models.CharField(max_length=20, choices=JOB_TYPES)
@@ -120,6 +142,7 @@ class JobPosting(BaseModel):
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['company', 'status']),
             models.Index(fields=['location', 'status']),
+            models.Index(fields=['job_category', 'status']),
         ]
 
 class JobView(BaseModel):

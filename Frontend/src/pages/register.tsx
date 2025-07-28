@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
@@ -9,9 +9,19 @@ import {
   LockClosedIcon,
   UserIcon,
   BriefcaseIcon,
-  CheckIcon
+  CheckIcon,
+  ChevronDownIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import Layout from '@/components/layout/Layout';
+
+interface JobCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  is_active: boolean;
+}
 
 const RegisterPage: React.FC = () => {
   const router = useRouter();
@@ -20,6 +30,10 @@ const RegisterPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -28,12 +42,51 @@ const RegisterPage: React.FC = () => {
     confirmPassword: '',
   });
 
+  // Fetch job categories on component mount
+  useEffect(() => {
+    const fetchJobCategories = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/job-categories/`);
+        if (response.ok) {
+          const data = await response.json();
+          setJobCategories(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch job categories:', error);
+      }
+    };
+
+    fetchJobCategories();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const removeCategory = (categoryId: string) => {
+    setSelectedCategories(prev => prev.filter(id => id !== categoryId));
+  };
+
+  const filteredCategories = jobCategories.filter(category =>
+    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const getSelectedCategoryNames = () => {
+    return jobCategories
+      .filter(cat => selectedCategories.includes(cat.id))
+      .map(cat => cat.name);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +106,7 @@ const RegisterPage: React.FC = () => {
         last_name: formData.lastName,
         email: formData.email,
         password: formData.password,
+        preferred_job_categories: selectedCategories,
       });
       router.push('/jobs');
     } catch (err: any) {
@@ -254,6 +308,96 @@ const RegisterPage: React.FC = () => {
                       <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                     )}
                   </button>
+                </div>
+              </div>
+
+              {/* Job Categories Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Interests <span className="text-gray-500">(Optional)</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Select the types of jobs you're interested in to get personalized job recommendations.
+                </p>
+                
+                {/* Selected Categories Display */}
+                {selectedCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {getSelectedCategoryNames().map((categoryName, index) => {
+                      const categoryId = selectedCategories[index];
+                      return (
+                        <span
+                          key={categoryId}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {categoryName}
+                          <button
+                            type="button"
+                            onClick={() => removeCategory(categoryId)}
+                            className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-600"
+                          >
+                            <XMarkIcon className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Category Dropdown */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                    className="w-full flex items-center justify-between px-3 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <span className="text-gray-500">
+                      {selectedCategories.length > 0 
+                        ? `${selectedCategories.length} categories selected`
+                        : 'Select job categories...'}
+                    </span>
+                    <ChevronDownIcon className={`w-5 h-5 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showCategoryDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                      {/* Search Box */}
+                      <div className="p-3 border-b border-gray-200">
+                        <input
+                          type="text"
+                          placeholder="Search categories..."
+                          value={categorySearch}
+                          onChange={(e) => setCategorySearch(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
+                      {/* Categories List */}
+                      <div className="max-h-40 overflow-y-auto">
+                        {filteredCategories.length > 0 ? (
+                          filteredCategories.map((category) => (
+                            <button
+                              key={category.id}
+                              type="button"
+                              onClick={() => handleCategoryToggle(category.id)}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
+                                selectedCategories.includes(category.id) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
+                            >
+                              <span>{category.name}</span>
+                              {selectedCategories.includes(category.id) && (
+                                <CheckIcon className="w-4 h-4 text-blue-600" />
+                              )}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-gray-500">
+                            No categories found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

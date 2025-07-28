@@ -148,6 +148,18 @@ GLASSDOOR_API_KEY=your-glassdoor-api-key
 GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
 # =============================================================================
+# Google OAuth 2.0 Configuration
+# =============================================================================
+
+# Google OAuth Credentials (for Gmail API integration)
+# Google OAuth 2.0 Configuration
+# Get these from Google Cloud Console: https://console.cloud.google.com/
+GOOGLE_OAUTH_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=your-google-oauth-client-secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/auth/google/callback
+GOOGLE_TOKEN_ENCRYPTION_KEY=your-32-character-encryption-key-here
+
+# =============================================================================
 # Monitoring and Analytics
 # =============================================================================
 

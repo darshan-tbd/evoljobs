@@ -6,8 +6,8 @@ from django.db.models import Q, Count, Avg, Min, Max
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from datetime import timedelta
-from .models import JobPosting, JobView, SavedJob, JobAlert
-from .serializers import JobPostingSerializer, JobPostingListSerializer, JobViewSerializer, SavedJobSerializer, JobAlertSerializer
+from .models import JobPosting, JobView, SavedJob, JobAlert, JobCategory
+from .serializers import JobPostingSerializer, JobPostingListSerializer, JobViewSerializer, SavedJobSerializer, JobAlertSerializer, JobCategorySerializer
 from .serializers import AdminJobPostingSerializer, AdminJobViewSerializer, AdminSavedJobSerializer, AdminJobAlertSerializer
 from apps.ai.services import job_matching_service
 import logging
@@ -29,7 +29,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     pagination_class = JobPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['job_type', 'experience_level', 'remote_option', 'company', 'industry', 'status']
+    filterset_fields = ['job_type', 'experience_level', 'remote_option', 'company', 'industry', 'job_category', 'status']
     search_fields = ['title', 'description', 'company__name', 'location__name', 'location__city', 'location__state', 'location__country', 'required_skills__name', 'industry__name']
     ordering_fields = ['created_at', 'title', 'salary_min', 'salary_max', 'views_count', 'applications_count', 'application_deadline']
     ordering = ['-created_at']
@@ -38,7 +38,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         """
         Get queryset based on user permissions and request parameters
         """
-        base_queryset = JobPosting.objects.select_related('company', 'location', 'industry').prefetch_related('required_skills', 'preferred_skills')
+        base_queryset = JobPosting.objects.select_related('company', 'location', 'industry', 'job_category').prefetch_related('required_skills', 'preferred_skills')
         
         # Check if this is an admin request
         is_admin_request = self.request.query_params.get('admin', '').lower() == 'true'
@@ -49,6 +49,17 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         else:
             # Regular users only see active, non-deleted jobs
             queryset = base_queryset.filter(status='active', is_deleted=False)
+            
+            # Filter by user's preferred job categories if user is authenticated
+            filter_by_preferences = self.request.query_params.get('filter_by_preferences', '').lower() == 'true'
+            if (filter_by_preferences and 
+                self.request.user.is_authenticated and 
+                hasattr(self.request.user, 'preferred_job_categories')):
+                
+                user_categories = self.request.user.preferred_job_categories.all()
+                if user_categories.exists():
+                    queryset = queryset.filter(job_category__in=user_categories)
+                    logger.info(f"Filtered jobs by user {self.request.user.email}'s preferences: {[cat.name for cat in user_categories]}")
         
         return queryset
     
@@ -502,4 +513,27 @@ class AdminJobAlertViewSet(viewsets.ReadOnlyModelViewSet):
             elif active.lower() == 'false':
                 queryset = queryset.filter(is_active=False)
         
-        return queryset.order_by('-created_at') 
+        return queryset.order_by('-created_at')
+
+
+class JobCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for job categories - read-only for frontend usage
+    """
+    queryset = JobCategory.objects.filter(is_active=True).order_by('name')
+    serializer_class = JobCategorySerializer
+    permission_classes = [permissions.AllowAny]  # Allow anonymous access for registration
+    pagination_class = None  # No pagination for categories
+    
+    def get_queryset(self):
+        """
+        Filter categories based on query parameters
+        """
+        queryset = super().get_queryset()
+        
+        # Search by name
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        
+        return queryset 

@@ -147,6 +147,12 @@ const Header: React.FC = () => {
                     >
                       Profile
                     </button>
+                    <button
+                      onClick={() => { router.push('/settings'); setUserMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Settings
+                    </button>
                     <hr className="my-1" />
                     <button
                       onClick={handleLogout}
@@ -226,6 +232,12 @@ const Header: React.FC = () => {
                       className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600"
                     >
                       Profile
+                    </button>
+                    <button
+                      onClick={() => { router.push('/settings'); setMobileMenuOpen(false); }}
+                      className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600"
+                    >
+                      Settings
                     </button>
                     <button
                       onClick={() => { handleLogout(); setMobileMenuOpen(false); }}

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import JobPosting, JobView, SavedJob, JobAlert
+from .models import JobPosting, JobView, SavedJob, JobAlert, JobCategory
 from apps.companies.models import Company
 from apps.core.models import Location, Skill, Industry
 
@@ -23,10 +23,16 @@ class IndustrySerializer(serializers.ModelSerializer):
         model = Industry
         fields = ['id', 'name', 'description']
 
+class JobCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobCategory
+        fields = ['id', 'name', 'slug', 'description', 'is_active']
+
 class JobPostingSerializer(serializers.ModelSerializer):
     company = CompanySerializer(read_only=True)
     location = LocationSerializer(read_only=True)
     industry = IndustrySerializer(read_only=True)
+    job_category = JobCategorySerializer(read_only=True)
     required_skills = SkillSerializer(many=True, read_only=True)
     preferred_skills = SkillSerializer(many=True, read_only=True)
     
@@ -40,7 +46,7 @@ class JobPostingSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobPosting
         fields = [
-            'id', 'title', 'slug', 'description', 'company', 'location', 'industry',
+            'id', 'title', 'slug', 'description', 'company', 'location', 'industry', 'job_category',
             'job_type', 'experience_level', 'remote_option', 'salary_min', 'salary_max',
             'salary_currency', 'salary_type', 'salary_display', 'requirements',
             'qualifications', 'benefits', 'required_skills', 'preferred_skills',

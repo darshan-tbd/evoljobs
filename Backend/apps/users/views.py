@@ -8,6 +8,7 @@ from .serializers import AdminUserSerializer, AdminUserProfileSerializer
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
+from apps.jobs.models import JobCategory
 
 User = get_user_model()
 
@@ -20,6 +21,73 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['patch'], url_path='update-preferences')
+    def update_preferences(self, request):
+        """Update user's preferred job categories"""
+        try:
+            user = request.user
+            preferred_categories = request.data.get('preferred_job_categories', [])
+            
+            # Validate that all provided category IDs exist
+            if preferred_categories:
+                valid_categories = JobCategory.objects.filter(
+                    id__in=preferred_categories, 
+                    is_active=True
+                )
+                if len(valid_categories) != len(preferred_categories):
+                    return Response(
+                        {'error': 'Some category IDs are invalid or inactive'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Update user's preferred categories
+            user.preferred_job_categories.set(preferred_categories)
+            
+            return Response({
+                'message': 'Preferences updated successfully',
+                'preferred_job_categories': preferred_categories
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to update preferences: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        """Get current user's profile with preferred job categories"""
+        try:
+            user = request.user
+            
+            # Get user profile
+            try:
+                profile = user.profile
+                profile_data = UserProfileSerializer(profile).data
+            except UserProfile.DoesNotExist:
+                profile_data = None
+            
+            # Get preferred job categories
+            preferred_categories = list(user.preferred_job_categories.values_list('id', flat=True))
+            
+            return Response({
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'user_type': user.user_type,
+                'is_verified': user.is_verified,
+                'date_joined': user.date_joined,
+                'preferred_job_categories': preferred_categories,
+                'profile': profile_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to get profile: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class UserExperienceViewSet(viewsets.ModelViewSet):
     serializer_class = UserExperienceSerializer

@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from .models import JobScraper, ScrapedJob
 from apps.jobs.models import JobPosting
+from apps.jobs.services import JobCategorizationService
 from apps.companies.models import Company
 from apps.core.models import Location, Industry, Skill
 from apps.users.models import User
@@ -425,6 +426,12 @@ class RealJobScraper:
                         # Get or create location
                         location = self.get_or_create_location(job_data['location'])
                         
+                        # Intelligent job categorization
+                        job_category = JobCategorizationService.categorize_job(
+                            title=job_data['title'],
+                            description=job_data['description']
+                        )
+                        
                         # Create job posting
                         job_posting, created = JobPosting.objects.get_or_create(
                             external_id=job_data['external_id'],
@@ -434,6 +441,7 @@ class RealJobScraper:
                                 'description': job_data['description'],
                                 'company': company,
                                 'posted_by': default_user,
+                                'job_category': job_category,  # Automatically assigned category
                                 'job_type': job_data.get('job_type', 'full_time'),
                                 'experience_level': job_data.get('experience_level', 'mid'),
                                 'remote_option': job_data.get('remote_option', 'onsite'),

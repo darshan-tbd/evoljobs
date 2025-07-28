@@ -78,6 +78,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_spectacular',
     'django_extensions',
@@ -119,6 +120,7 @@ LOCAL_APPS = [
     'apps.search',
     'apps.ai',
     'apps.resumes',
+    'apps.google_integration',
 ]
 
 # All installed apps
@@ -641,4 +643,16 @@ RATELIMIT_ENABLE = not DEBUG
 RATELIMIT_USE_CACHE = 'default'
 
 # Health check settings
-HEALTH_CHECK_CACHE_TIME = 300  # 5 minutes 
+HEALTH_CHECK_CACHE_TIME = 300  # 5 minutes
+
+# =============================================================================
+# Google OAuth 2.0 Configuration
+# =============================================================================
+
+# Google OAuth Credentials (for Gmail API integration)
+GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID', default='')
+GOOGLE_OAUTH_CLIENT_SECRET = env('GOOGLE_OAUTH_CLIENT_SECRET', default='')
+GOOGLE_OAUTH_REDIRECT_URI = env('GOOGLE_OAUTH_REDIRECT_URI', default='http://localhost:3000/auth/google/callback')
+
+# Token encryption key
+GOOGLE_TOKEN_ENCRYPTION_KEY = env('GOOGLE_TOKEN_ENCRYPTION_KEY', default='') 

@@ -58,6 +58,14 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     last_name = models.CharField(max_length=30)
     user_type = models.CharField(max_length=20, choices=USER_TYPES, default='job_seeker')
     
+    # Job preferences for job seekers
+    preferred_job_categories = models.ManyToManyField(
+        'jobs.JobCategory', 
+        blank=True, 
+        related_name='interested_users',
+        help_text="Job categories the user is interested in"
+    )
+    
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)

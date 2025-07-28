@@ -72,6 +72,7 @@ urlpatterns = [
     path('api/v1/search/', include('apps.search.urls')),
     path('api/v1/ai/', include('apps.ai.urls')),
     path('api/v1/resumes/', include('apps.resumes.urls')),
+    path('api/v1/google/', include('apps.google_integration.urls')),
     
     # Custom endpoint for job recommendations as requested
     path('api/recommended-jobs/', JobPostingViewSet.as_view({'get': 'recommended'}), name='recommended-jobs'),
