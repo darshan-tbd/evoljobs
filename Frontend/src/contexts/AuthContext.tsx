@@ -17,6 +17,7 @@ interface AuthContextType {
     first_name: string;
     last_name: string;
     user_type?: string;
+    preferred_job_categories?: string[];
   }) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -89,6 +90,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     first_name: string;
     last_name: string;
     user_type?: string;
+    preferred_job_categories?: string[];
   }) => {
     try {
       const result = await dispatch(registerUser(userData)).unwrap();

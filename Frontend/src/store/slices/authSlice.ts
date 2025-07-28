@@ -57,6 +57,7 @@ export const registerUser = createAsyncThunk(
     first_name: string;
     last_name: string;
     user_type?: string;
+    preferred_job_categories?: string[];
   }, { rejectWithValue }) => {
     try {
       const response = await authAPI.register({

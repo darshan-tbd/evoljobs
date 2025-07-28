@@ -138,6 +138,6 @@ def update_job_counts(sender, instance, created, **kwargs):
                 is_deleted=False
             ).count()
             instance.company.save(update_fields=['active_jobs_count'])
-        except AttributeError:
+        except (AttributeError, ValueError):
             # Company model doesn't have active_jobs_count field
             pass 

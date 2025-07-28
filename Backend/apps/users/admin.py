@@ -4,14 +4,19 @@ from .models import User, UserProfile, UserExperience, UserEducation
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ['email', 'first_name', 'last_name', 'user_type', 'is_active', 'date_joined']
-    list_filter = ['user_type', 'is_active', 'is_verified', 'date_joined']
+    list_display = ['email', 'first_name', 'last_name', 'user_type', 'get_preferred_categories_count', 'is_active', 'date_joined']
+    list_filter = ['user_type', 'is_active', 'is_verified', 'date_joined', 'preferred_job_categories']
     search_fields = ['email', 'first_name', 'last_name']
     ordering = ['-date_joined']
     
+    def get_preferred_categories_count(self, obj):
+        """Show count of preferred job categories"""
+        return obj.preferred_job_categories.count()
+    get_preferred_categories_count.short_description = 'Job Categories'
+    
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'user_type')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'user_type', 'preferred_job_categories')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'is_verified', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -19,7 +24,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'user_type'),
+            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'user_type', 'preferred_job_categories'),
         }),
     )
 

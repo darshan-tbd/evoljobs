@@ -22,7 +22,8 @@ import {
   EyeIcon,
   EyeSlashIcon,
   CogIcon,
-  BellIcon
+  BellIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import Layout from '@/components/layout/Layout';
 
@@ -54,6 +55,14 @@ interface Resume {
   confidence_score?: number;
 }
 
+interface JobCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  is_active: boolean;
+}
+
 const ProfilePage: React.FC = () => {
   const router = useRouter();
   const { user, isAuthenticated, refreshProfile } = useAuth();
@@ -82,11 +91,21 @@ const ProfilePage: React.FC = () => {
   
   const [userResumes, setUserResumes] = useState<Resume[]>([]);
   const [selectedResumeId, setSelectedResumeId] = useState<string>('');
+  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+  const [editingJobInterests, setEditingJobInterests] = useState(false);
+  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchProfileData();
       fetchUserResumes();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchJobCategories();
     }
   }, [user]);
 
@@ -156,6 +175,39 @@ const ProfilePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching user resumes:', error);
+    }
+  };
+
+  const fetchJobCategories = async () => {
+    try {
+      // Fetch all job categories
+      const categoriesResponse = await fetch('http://127.0.0.1:8000/api/v1/jobs/job-categories/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        setJobCategories(categoriesData || []);
+      }
+
+      // Fetch user's preferred categories
+      const profileResponse = await fetch('http://127.0.0.1:8000/api/v1/users/profiles/profile/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        setPreferredCategories(profileData.preferred_job_categories || []);
+        setTempSelectedCategories(profileData.preferred_job_categories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching job categories:', error);
     }
   };
 
@@ -359,6 +411,7 @@ const ProfilePage: React.FC = () => {
     { id: 'professional', name: 'Professional', icon: BriefcaseIcon },
     { id: 'education', name: 'Education', icon: AcademicCapIcon },
     { id: 'resume', name: 'Resume', icon: DocumentTextIcon },
+    { id: 'job-interests', name: 'Job Interests', icon: TagIcon },
     { id: 'settings', name: 'Settings', icon: CogIcon }
   ];
 
@@ -910,6 +963,164 @@ const ProfilePage: React.FC = () => {
               </div>
             </motion.div>
           )}
+
+          {activeTab === 'job-interests' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Job Interests</h3>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-medium text-gray-900">
+                    {editingJobInterests ? 'Edit Job Interests' : 'Your Job Interests'}
+                  </h4>
+                                     {!editingJobInterests && (
+                     <button
+                       onClick={() => {
+                         setEditingJobInterests(true);
+                         setTempSelectedCategories(preferredCategories);
+                       }}
+                       className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-medium"
+                     >
+                       Edit
+                     </button>
+                   )}
+                </div>
+
+                {editingJobInterests ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Preferred Job Categories
+                      </label>
+                                             <div className="flex flex-wrap gap-2">
+                         {jobCategories.map((category) => (
+                           <span
+                             key={category.id}
+                             className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer ${
+                               tempSelectedCategories.includes(category.id)
+                                 ? 'bg-blue-100 text-blue-800'
+                                 : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                             }`}
+                             onClick={() => {
+                               const newSelected = [...tempSelectedCategories];
+                               if (newSelected.includes(category.id)) {
+                                 newSelected.splice(newSelected.indexOf(category.id), 1);
+                               } else {
+                                 newSelected.push(category.id);
+                               }
+                               setTempSelectedCategories(newSelected);
+                             }}
+                           >
+                             {category.name}
+                           </span>
+                         ))}
+                       </div>
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                                             <button
+                         onClick={() => {
+                           setEditingJobInterests(false);
+                           setTempSelectedCategories(preferredCategories);
+                         }}
+                         className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium"
+                       >
+                         Cancel
+                       </button>
+                       <button
+                         onClick={async () => {
+                           setLoading(true);
+                           setError('');
+                           setSuccess('');
+                           try {
+                             const response = await fetch('http://127.0.0.1:8000/api/v1/users/profiles/update-preferences/', {
+                               method: 'PATCH',
+                               headers: {
+                                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                 'Content-Type': 'application/json',
+                               },
+                               body: JSON.stringify({
+                                 preferred_job_categories: tempSelectedCategories
+                               }),
+                             });
+
+                             if (response.ok) {
+                               setSuccess('Job interests updated successfully!');
+                               setTimeout(() => setSuccess(''), 3000);
+                               setEditingJobInterests(false);
+                               setPreferredCategories(tempSelectedCategories);
+                               await refreshProfile();
+                             } else {
+                               const errorData = await response.json();
+                               setError(errorData.error || 'Failed to update job interests');
+                             }
+                           } catch (err: any) {
+                             setError(err.message || 'Failed to update job interests');
+                           } finally {
+                             setLoading(false);
+                           }
+                         }}
+                         disabled={loading}
+                         className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                       >
+                         {loading ? (
+                           <>
+                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                             Saving...
+                           </>
+                         ) : (
+                           <>
+                             <CheckIcon className="h-4 w-4 mr-2" />
+                             Save Changes
+                           </>
+                         )}
+                       </button>
+                    </div>
+                  </div>
+                                 ) : (
+                   <div className="space-y-4">
+                     <p className="text-sm text-gray-600">
+                       You have selected {preferredCategories.length} job categories.
+                     </p>
+                     
+                     {preferredCategories.length > 0 ? (
+                       <div className="flex flex-wrap gap-2">
+                         {preferredCategories.map((categoryId) => {
+                           const category = jobCategories.find(cat => cat.id === categoryId || cat.id === String(categoryId));
+                           return (
+                             <span
+                               key={categoryId}
+                               className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                             >
+                               {category?.name || 'Unknown Category'}
+                             </span>
+                           );
+                         })}
+                       </div>
+                     ) : (
+                       <div className="text-center py-8">
+                         <TagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                         <p className="text-gray-500 mb-4">No job interests selected yet</p>
+                         <button
+                           onClick={() => {
+                             setEditingJobInterests(true);
+                             setTempSelectedCategories([]);
+                           }}
+                           className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                         >
+                           Add your job interests
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                                 )}
+               </div>
+             </motion.div>
+           )}
 
           {activeTab === 'education' && (
             <motion.div

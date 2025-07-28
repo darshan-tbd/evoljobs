@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import {
   Box,
@@ -24,6 +24,15 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Chip,
+  Autocomplete,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  OutlinedInput,
+  Checkbox,
+  ListItemButton,
 } from '@mui/material';
 import {
   Security as SecurityIcon,
@@ -35,10 +44,21 @@ import {
   Save as SaveIcon,
   Lock as LockIcon,
   Email as EmailIcon,
+  Work as WorkIcon,
+  Category as CategoryIcon,
 } from '@mui/icons-material';
+
+interface JobCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  is_active: boolean;
+}
 import { useAuth } from '../hooks/useAuth';
 import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
+import GoogleIntegrationCard from '../components/GoogleIntegrationCard';
 
 const SettingsPage: React.FC = () => {
   const router = useRouter();
@@ -60,6 +80,11 @@ const SettingsPage: React.FC = () => {
     twoFactorAuth: false,
   });
 
+  // Job categories state
+  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
+  const [preferredCategories, setPreferredCategories] = useState<JobCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
   // Password change state
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -67,11 +92,87 @@ const SettingsPage: React.FC = () => {
     confirmPassword: '',
   });
 
+  // Fetch job categories and user preferences
+  useEffect(() => {
+    const fetchJobCategories = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/job-categories/`);
+        if (response.ok) {
+          const data = await response.json();
+          setJobCategories(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch job categories:', error);
+      }
+    };
+
+    const fetchUserPreferences = async () => {
+      if (!user) return;
+      
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/profile/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.preferred_job_categories) {
+            const userCategoryIds = userData.preferred_job_categories;
+            setPreferredCategories(jobCategories.filter(cat => userCategoryIds.includes(cat.id)));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user preferences:', error);
+      }
+    };
+
+    fetchJobCategories();
+    if (jobCategories.length > 0) {
+      fetchUserPreferences();
+    }
+  }, [user, jobCategories.length]);
+
   const handleSettingChange = (setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setSettings(prev => ({
       ...prev,
       [setting]: event.target.checked
     }));
+  };
+
+  const saveJobPreferences = async () => {
+    setCategoriesLoading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('access_token');
+      const categoryIds = preferredCategories.map(cat => cat.id);
+      
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/update-preferences/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          preferred_job_categories: categoryIds,
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess('Job preferences updated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to update preferences');
+      }
+    } catch (err) {
+      setError('Failed to update preferences. Please try again.');
+    } finally {
+      setCategoriesLoading(false);
+    }
   };
 
   const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,6 +298,65 @@ const SettingsPage: React.FC = () => {
           )}
 
           <Grid container spacing={3}>
+            {/* Job Preferences */}
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <WorkIcon sx={{ mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h6">Job Preferences</Typography>
+                  </Box>
+                  <Divider sx={{ mb: 2 }} />
+                  
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    Select the types of jobs you're interested in. This helps us show you relevant job recommendations and controls which jobs you'll auto-apply to.
+                  </Typography>
+                  
+                  <Autocomplete
+                    multiple
+                    id="job-categories"
+                    options={jobCategories}
+                    value={preferredCategories}
+                    onChange={(event, newValue) => setPreferredCategories(newValue)}
+                    getOptionLabel={(option) => option.name}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
+                        <Chip
+                          variant="outlined"
+                          label={option.name}
+                          {...getTagProps({ index })}
+                          key={option.id}
+                        />
+                      ))
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        variant="outlined"
+                        label="Preferred Job Categories"
+                        placeholder="Search and select job categories..."
+                      />
+                    )}
+                    sx={{ mb: 2 }}
+                  />
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="textSecondary">
+                      {preferredCategories.length} categories selected
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={saveJobPreferences}
+                      disabled={categoriesLoading}
+                      startIcon={categoriesLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+                    >
+                      {categoriesLoading ? 'Saving...' : 'Save Preferences'}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
             {/* Notification Settings */}
             <Grid item xs={12}>
               <Card>
@@ -367,6 +527,11 @@ const SettingsPage: React.FC = () => {
                   </List>
                 </CardContent>
               </Card>
+            </Grid>
+
+            {/* Google Integration */}
+            <Grid item xs={12}>
+              <GoogleIntegrationCard />
             </Grid>
 
             {/* Save Button */}
