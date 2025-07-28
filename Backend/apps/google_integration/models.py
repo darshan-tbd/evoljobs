@@ -37,8 +37,8 @@ class GoogleIntegration(BaseModel):
     )
     
     # OAuth tokens (encrypted)
-    access_token_encrypted = models.TextField(blank=True)
-    refresh_token_encrypted = models.TextField(blank=True, null=True)
+    access_token_encrypted = models.TextField(blank=True, default='')
+    refresh_token_encrypted = models.TextField(blank=True, default='')
     
     # Token metadata
     token_expires_at = models.DateTimeField(null=True, blank=True)
@@ -99,6 +99,9 @@ class GoogleIntegration(BaseModel):
             self.access_token_encrypted = self._encrypt_token(access_token)
             if refresh_token:
                 self.refresh_token_encrypted = self._encrypt_token(refresh_token)
+            else:
+                # Explicitly set to empty string if no refresh token
+                self.refresh_token_encrypted = ''
             
             if expires_in:
                 self.token_expires_at = timezone.now() + timezone.timedelta(seconds=expires_in)

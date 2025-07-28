@@ -21,6 +21,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Backend.settings")
 django.setup()
 
 from apps.jobs.models import JobPosting
+from apps.jobs.services import JobCategorizationService
 from apps.companies.models import Company
 from apps.core.models import Location
 from django.contrib.auth import get_user_model
@@ -576,6 +577,12 @@ class MichaelPageScraper:
                 unique_slug = f"{base_slug}-{counter}"
                 counter += 1
             
+            # Intelligent job categorization
+            job_category = JobCategorizationService.categorize_job(
+                title=job_data['title'],
+                description=job_data.get('description', '')
+            )
+            
             # Create job posting
             job_obj = JobPosting.objects.create(
                 title=job_data['title'],
@@ -583,6 +590,7 @@ class MichaelPageScraper:
                 description=job_data.get('description', 'No description available'),
                 company=company_obj,
                 posted_by=system_user,
+                job_category=job_category,  # Automatically assigned category
                 location=location_obj,
                 salary_min=salary_min,
                 salary_max=salary_max,

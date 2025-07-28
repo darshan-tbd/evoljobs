@@ -153,3 +153,71 @@ class ApplicationDocument(BaseModel):
         return f"{self.application} - {self.document_type}: {self.filename}"
 
  
+class AutoAppliedJob(BaseModel):
+    """
+    Track jobs that were automatically applied to by users to prevent duplicates
+    """
+    
+    APPLICATION_METHODS = (
+        ('email', 'Email to Company'),
+        ('external_redirect', 'External Website'),
+        ('api', 'API Integration'),
+    )
+    
+    EMAIL_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('sent', 'Sent Successfully'),
+        ('failed', 'Failed to Send'),
+        ('skipped', 'Skipped'),
+        ('bounced', 'Email Bounced'),
+    )
+    
+    # Basic tracking info
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auto_applied_jobs')
+    job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name='auto_applications')
+    
+    # Application details
+    applied_at = models.DateTimeField(auto_now_add=True)
+    application_method = models.CharField(max_length=20, choices=APPLICATION_METHODS, default='email')
+    
+    # Email tracking for auto apply
+    email_status = models.CharField(max_length=20, choices=EMAIL_STATUS_CHOICES, default='pending')
+    company_email = models.EmailField(blank=True, help_text="Email address the application was sent to")
+    gmail_message_id = models.CharField(max_length=255, blank=True, help_text="Gmail API message ID")
+    
+    # Application content tracking
+    cover_letter_sent = models.TextField(blank=True, help_text="Cover letter content that was sent")
+    resume_attached = models.BooleanField(default=False)
+    
+    # Error tracking
+    error_message = models.TextField(blank=True)
+    retry_count = models.IntegerField(default=0)
+    
+    # Link to regular job application if created
+    job_application = models.OneToOneField(
+        JobApplication, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='auto_applied_record'
+    )
+    
+    class Meta:
+        db_table = 'auto_applied_jobs'
+        unique_together = [['user', 'job']]  # Prevent duplicate auto applications
+        ordering = ['-applied_at']
+    
+    def __str__(self):
+        return f"{self.user.email} auto-applied to {self.job.title} at {self.job.company.name}"
+    
+    @property
+    def was_successful(self):
+        """Check if the auto application was successful"""
+        return self.email_status == 'sent'
+    
+    @property
+    def needs_retry(self):
+        """Check if the application needs to be retried"""
+        return self.email_status in ['failed', 'pending'] and self.retry_count < 3 
+
+ 

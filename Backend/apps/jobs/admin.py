@@ -1,11 +1,19 @@
 from django.contrib import admin
-from .models import JobPosting, JobView, SavedJob, JobAlert
+from .models import JobPosting, JobView, SavedJob, JobAlert, JobCategory
+
+@admin.register(JobCategory)
+class JobCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description', 'keywords']
+    prepopulated_fields = {'slug': ('name',)}
+    list_editable = ['is_active']
 
 @admin.register(JobPosting)
 class JobPostingAdmin(admin.ModelAdmin):
-    list_display = ['title', 'company', 'job_type', 'status', 'is_featured', 'created_at']
-    list_filter = ['job_type', 'status', 'is_featured', 'experience_level', 'remote_option']
-    search_fields = ['title', 'company__name', 'description']
+    list_display = ['title', 'company', 'job_category', 'job_type', 'status', 'is_featured', 'created_at']
+    list_filter = ['job_type', 'job_category', 'status', 'is_featured', 'experience_level', 'remote_option']
+    search_fields = ['title', 'company__name', 'description', 'job_category__name']
     prepopulated_fields = {'slug': ('title',)}
 
 @admin.register(JobView)

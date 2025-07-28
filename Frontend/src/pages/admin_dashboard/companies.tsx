@@ -25,10 +25,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../hooks/useAuth';
 import AdminLayout from '../../components/admin_dashboard/AdminLayout';
+import CompanyFormDialog from '../../components/admin/CompanyFormDialog';
 
 interface Company {
   id: string;
   name: string;
+  slug?: string;
   description?: string;
   website?: string;
   email?: string;
@@ -39,20 +41,26 @@ interface Company {
   country?: string;
   industry?: string;
   size?: string;
+  company_size?: string;
   founded_year?: number;
+  headquarters?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  facebook_url?: string;
   is_verified: boolean;
   is_active: boolean;
+  is_featured: boolean;
   logo_url?: string;
   created_at: string;
   updated_at: string;
-  user: {
+  user?: {
     id: string;
     first_name: string;
     last_name: string;
     email: string;
   };
-  job_count: number;
-  application_count: number;
+  job_count?: number;
+  application_count?: number;
 }
 
 interface CompanyStats {
@@ -82,6 +90,8 @@ const AdminCompaniesPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [showCompanyFormDialog, setShowCompanyFormDialog] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCompanies, setTotalCompanies] = useState(0);
@@ -174,6 +184,70 @@ const AdminCompaniesPage: React.FC = () => {
   const handleViewCompany = (company: Company) => {
     setSelectedCompany(company);
     setShowCompanyModal(true);
+  };
+
+  const handleAddCompany = () => {
+    setEditingCompany(null);
+    setShowCompanyFormDialog(true);
+  };
+
+  const handleEditCompany = (company: Company) => {
+    setEditingCompany(company);
+    setShowCompanyFormDialog(true);
+  };
+
+  const handleSaveCompany = async (companyData: any) => {
+    try {
+      const isEditing = !!editingCompany;
+      const url = isEditing 
+        ? `http://127.0.0.1:8000/api/v1/companies/admin-companies/${editingCompany.id}/`
+        : 'http://127.0.0.1:8000/api/v1/companies/admin-companies/';
+      
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(companyData),
+      });
+
+      if (response.ok) {
+        const savedCompany = await response.json();
+        
+        if (isEditing) {
+          setCompanies(companies.map(comp => 
+            comp.id === editingCompany.id ? savedCompany : comp
+          ));
+        } else {
+          setCompanies([savedCompany, ...companies]);
+        }
+        
+        setSnackbar({
+          open: true,
+          message: `Company ${isEditing ? 'updated' : 'created'} successfully!`,
+          type: 'success'
+        });
+        
+        setShowCompanyFormDialog(false);
+        setEditingCompany(null);
+        
+        // Refresh data
+        await fetchCompanies(currentPage);
+        await fetchStats();
+      } else {
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} company`);
+      }
+    } catch (error) {
+      console.error('Error saving company:', error);
+      setSnackbar({
+        open: true,
+        message: `Error ${editingCompany ? 'updating' : 'creating'} company. Please try again.`,
+        type: 'error'
+      });
+    }
   };
 
   const handleToggleVerification = async (company: Company) => {
@@ -348,7 +422,10 @@ const AdminCompaniesPage: React.FC = () => {
               <ArrowPathIcon className="w-5 h-5 mr-2" />
               Refresh
             </button>
-            <button className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+            <button 
+              onClick={handleAddCompany}
+              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
               <PlusIcon className="w-5 h-5 mr-2" />
               Add Company
             </button>
@@ -578,6 +655,13 @@ const AdminCompaniesPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => handleEditCompany(company)}
+                          className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit Company"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleViewCompany(company)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
@@ -888,6 +972,17 @@ const AdminCompaniesPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Company Form Dialog */}
+      <CompanyFormDialog
+        open={showCompanyFormDialog}
+        onClose={() => {
+          setShowCompanyFormDialog(false);
+          setEditingCompany(null);
+        }}
+        onSave={handleSaveCompany}
+        company={editingCompany}
+      />
 
       {/* Snackbar */}
       {snackbar.open && (

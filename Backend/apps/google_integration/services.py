@@ -139,6 +139,12 @@ class GoogleOAuthService:
             flow.fetch_token(code=authorization_code)
             credentials = flow.credentials
             
+            # Log token information for debugging
+            logger.info(f"OAuth tokens received - Access token: {bool(credentials.token)}, Refresh token: {bool(credentials.refresh_token)}")
+            
+            if not credentials.refresh_token:
+                logger.warning(f"No refresh token received for user. This might happen if the user has already authorized the app recently.")
+            
             # Get user info from Google
             user_info = self._get_google_user_info(credentials.token)
             
@@ -148,6 +154,9 @@ class GoogleOAuthService:
                 defaults={
                     'google_email': user_info.get('email', ''),
                     'google_user_id': user_info.get('id', ''),
+                    'access_token_encrypted': '',
+                    'refresh_token_encrypted': '',
+                    'status': 'disconnected',
                 }
             )
             
@@ -161,6 +170,11 @@ class GoogleOAuthService:
             integration.scope = ' '.join(self.SCOPES)
             integration.google_email = user_info.get('email', '')
             integration.google_user_id = user_info.get('id', '')
+            
+            # If no refresh token, add a note about re-authorization
+            if not credentials.refresh_token:
+                integration.last_error = "No refresh token received. Re-authorization may be required when access token expires."
+            
             integration.save()
             
             logger.info(f"OAuth successful for user {user.email}")
@@ -305,7 +319,8 @@ class GmailAPIService:
         job: JobPosting, 
         cover_letter: str, 
         resume_file: Optional[Any] = None,
-        additional_attachments: List[Tuple[str, bytes]] = None
+        additional_attachments: List[Tuple[str, bytes]] = None,
+        use_static_template: bool = False
     ) -> Optional[EmailSentRecord]:
         """
         Send job application email via Gmail API
@@ -327,7 +342,8 @@ class GmailAPIService:
                 cover_letter=cover_letter,
                 to_email=to_email,
                 resume_file=resume_file,
-                additional_attachments=additional_attachments or []
+                additional_attachments=additional_attachments or [],
+                use_static_template=use_static_template
             )
             
             # Send email
@@ -337,19 +353,29 @@ class GmailAPIService:
                 body=message
             ).execute()
             
+            # Create appropriate subject for record keeping
+            if use_static_template:
+                category_name = job.job_category.name if job.job_category else job.title
+                subject = f"Application for {category_name} Position"
+                email_body = f"Static template auto-application for {category_name} position"
+            else:
+                subject = f"Application for {job.title} Position"
+                email_body = cover_letter
+            
             # Record sent email
             email_record = EmailSentRecord.objects.create(
                 google_integration=self.integration,
                 job=job,
                 gmail_message_id=sent_message['id'],
                 to_email=to_email,
-                subject=f"Application for {job.title} Position",
-                email_body=cover_letter,
+                subject=subject,
+                email_body=email_body,
                 attachments=[resume_file.name] if resume_file else [],
                 status='sent',
                 metadata={
                     'thread_id': sent_message.get('threadId'),
-                    'label_ids': sent_message.get('labelIds', [])
+                    'label_ids': sent_message.get('labelIds', []),
+                    'auto_apply': use_static_template
                 }
             )
             
@@ -370,7 +396,8 @@ class GmailAPIService:
         cover_letter: str, 
         to_email: str,
         resume_file: Optional[Any] = None,
-        additional_attachments: List[Tuple[str, bytes]] = None
+        additional_attachments: List[Tuple[str, bytes]] = None,
+        use_static_template: bool = False
     ) -> Dict:
         """
         Create email message for job application
@@ -379,10 +406,24 @@ class GmailAPIService:
         message = MIMEMultipart()
         message['to'] = to_email
         message['from'] = self.integration.google_email
-        message['subject'] = f"Application for {job.title} Position"
         
-        # Email body
-        body = f"""Dear Hiring Manager,
+        # Use static template for auto apply as specified in requirements
+        if use_static_template:
+            # Static subject format: "Application for [Job Category] Position"
+            category_name = job.job_category.name if job.job_category else job.title
+            message['subject'] = f"Application for {category_name} Position"
+            
+            # Static email body format as specified
+            body = f"""Hello,
+
+I am writing to express my interest in the {category_name} role at your company. Please find my resume attached. Looking forward to hearing from you.
+
+Best regards,
+{self.integration.user.get_full_name()}"""
+        else:
+            # Dynamic template for manual applications
+            message['subject'] = f"Application for {job.title} Position"
+            body = f"""Dear Hiring Manager,
 
 {cover_letter}
 
@@ -430,9 +471,17 @@ This email was sent through JobPilot on behalf of {self.integration.user.get_ful
     
     def _extract_contact_email(self, job: JobPosting) -> Optional[str]:
         """
-        Extract contact email from job posting
+        Extract contact email from job posting, prioritizing company contact email
         """
-        # Check if job has direct contact email
+        # Priority 1: Company contact email (as specified in requirements)
+        if job.company and job.company.email:
+            return job.company.email
+        
+        # Priority 2: Job's direct application email
+        if hasattr(job, 'application_email') and job.application_email:
+            return job.application_email
+        
+        # Priority 3: Check if job has direct contact email
         if hasattr(job, 'contact_email') and job.contact_email:
             return job.contact_email
         
@@ -769,29 +818,63 @@ class AutoApplyService:
                     if session.applications_sent >= session.max_applications:
                         break
                     
-                    # Generate cover letter
-                    cover_letter = self._generate_cover_letter(job)
+                    # Check if already auto-applied to this job
+                    from apps.applications.models import AutoAppliedJob
+                    existing_auto_apply = AutoAppliedJob.objects.filter(
+                        user=self.integration.user,
+                        job=job
+                    ).first()
+                    
+                    if existing_auto_apply:
+                        logger.info(f"Already auto-applied to job {job.id}, skipping")
+                        continue
+                    
+                    # Verify company has contact email
+                    if not job.company or not job.company.email:
+                        logger.warning(f"Job {job.id} has no company contact email, skipping")
+                        continue
+                    
+                    # Generate static cover letter (minimal for auto apply)
+                    category_name = job.job_category.name if job.job_category else job.title
+                    static_cover_letter = f"Auto-application for {category_name} position"
                     
                     # Get user's resume
                     resume_file = self._get_user_resume()
                     
-                    # Send application
+                    # Send application using static template
                     email_record = self.gmail_service.send_job_application_email(
                         job=job,
-                        cover_letter=cover_letter,
-                        resume_file=resume_file
+                        cover_letter=static_cover_letter,
+                        resume_file=resume_file,
+                        use_static_template=True  # Use static template for auto apply
                     )
                     
                     if email_record:
-                        # Create application record
+                        # Create AutoAppliedJob record for tracking
+                        auto_applied_job = AutoAppliedJob.objects.create(
+                            user=self.integration.user,
+                            job=job,
+                            application_method='email',
+                            email_status='sent',
+                            company_email=job.company.email,
+                            gmail_message_id=email_record.gmail_message_id,
+                            cover_letter_sent=static_cover_letter,
+                            resume_attached=bool(resume_file)
+                        )
+                        
+                        # Also create regular JobApplication record if needed
                         application = JobApplication.objects.create(
                             job=job,
                             applicant=self.integration.user,
-                            cover_letter=cover_letter,
+                            cover_letter=static_cover_letter,
                             status='pending',
                             is_external_application=True,
                             external_url=email_record.gmail_message_id
                         )
+                        
+                        # Link the records
+                        auto_applied_job.job_application = application
+                        auto_applied_job.save()
                         
                         email_record.application = application
                         email_record.save()
@@ -805,16 +888,39 @@ class AutoApplyService:
                         session.applications_sent += 1
                         results['applications_sent'] += 1
                         
-                        logger.info(f"Application sent for job {job.id}")
+                        logger.info(f"Auto-applied to job {job.id} at {job.company.name} ({job.company.email})")
                     else:
+                        # Record failed attempt
+                        AutoAppliedJob.objects.create(
+                            user=self.integration.user,
+                            job=job,
+                            application_method='email',
+                            email_status='failed',
+                            company_email=job.company.email if job.company else '',
+                            error_message="Failed to send email"
+                        )
                         session.applications_failed += 1
                         results['applications_failed'] += 1
                         results['errors'].append(f"Failed to send email for job {job.id}")
                 
                 except Exception as e:
+                    # Record error in tracking
+                    try:
+                        from apps.applications.models import AutoAppliedJob
+                        AutoAppliedJob.objects.create(
+                            user=self.integration.user,
+                            job=job,
+                            application_method='email',
+                            email_status='failed',
+                            company_email=job.company.email if job.company and job.company.email else '',
+                            error_message=str(e)[:500]  # Truncate long error messages
+                        )
+                    except:
+                        pass  # Don't fail if we can't record the error
+                    
                     session.applications_failed += 1
                     results['applications_failed'] += 1
-                    error_msg = f"Error applying to job {job.id}: {str(e)}"
+                    error_msg = f"Error auto-applying to job {job.id}: {str(e)}"
                     results['errors'].append(error_msg)
                     logger.error(error_msg)
                 
