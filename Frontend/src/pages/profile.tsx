@@ -421,50 +421,61 @@ const ProfilePage: React.FC = () => {
         {/* Header */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-                <p className="text-gray-600 mt-2">Manage your professional profile and preferences</p>
-              </div>
-              <div className="flex space-x-3">
-                {!editing ? (
-                  <button
-                    onClick={() => setEditing(true)}
-                    disabled={profileLoading}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
-                  >
-                    <PencilIcon className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleCancel}
-                      className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      disabled={loading}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <CheckIcon className="h-4 w-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
-                    </button>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <UserIcon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
                   </div>
-                )}
+                  <p className="text-gray-600">Manage your professional profile and preferences</p>
+                </div>
+                <div className="flex space-x-3">
+                  {!editing ? (
+                    <button
+                      onClick={() => setEditing(true)}
+                      disabled={profileLoading}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
+                    >
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </button>
+                  ) : (
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={handleCancel}
+                        className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={loading}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
+                      >
+                        {loading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckIcon className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -502,7 +513,7 @@ const ProfilePage: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -535,11 +546,11 @@ const ProfilePage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                     >
                       <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <UserIcon className="h-8 w-8 text-blue-600" />
+                        <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                          <UserIcon className="h-6 w-6 text-blue-600" />
                         </div>
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-600">Profile Completeness</p>
@@ -562,11 +573,11 @@ const ProfilePage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.1 }}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                     >
                       <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <DocumentTextIcon className="h-8 w-8 text-green-600" />
+                        <div className="flex-shrink-0 p-2 bg-green-100 rounded-lg">
+                          <DocumentTextIcon className="h-6 w-6 text-green-600" />
                         </div>
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-600">Resume Status</p>
@@ -586,11 +597,11 @@ const ProfilePage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.2 }}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                     >
                       <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <StarIcon className="h-8 w-8 text-yellow-600" />
+                        <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-lg">
+                          <StarIcon className="h-6 w-6 text-yellow-600" />
                         </div>
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-600">Skills Listed</p>
@@ -605,11 +616,11 @@ const ProfilePage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.3 }}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                     >
                                               <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <LinkIcon className="h-8 w-8 text-purple-600" />
+                          <div className="flex-shrink-0 p-2 bg-purple-100 rounded-lg">
+                            <LinkIcon className="h-6 w-6 text-purple-600" />
                           </div>
                           <div className="ml-4">
                             <p className="text-sm font-medium text-gray-600">Social Links</p>
@@ -682,7 +693,7 @@ const ProfilePage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.1 }}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200"
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
                     >
                       <div className="px-6 py-4 border-b border-gray-200">
                         <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
@@ -730,10 +741,16 @@ const ProfilePage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200"
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <UserIcon className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                </div>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -831,10 +848,16 @@ const ProfilePage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200"
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Professional Information</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <BriefcaseIcon className="h-5 w-5 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Professional Information</h3>
+                </div>
               </div>
               <div className="p-6 space-y-6">
                 <div>
@@ -968,10 +991,16 @@ const ProfilePage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200"
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Job Interests</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <TagIcon className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Job Interests</h3>
+                </div>
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -1126,10 +1155,16 @@ const ProfilePage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200"
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Education</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <AcademicCapIcon className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Education</h3>
+                </div>
               </div>
               <div className="p-6">
                 <div>
@@ -1154,10 +1189,16 @@ const ProfilePage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200"
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Resume Management</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <DocumentTextIcon className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Resume Management</h3>
+                </div>
               </div>
               <div className="p-6">
                 {/* Resume Selection for Profile */}
@@ -1296,10 +1337,16 @@ const ProfilePage: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200"
+                  transition={{ duration: 0.6 }}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
                 >
                   <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Account Information</h3>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-gray-100 rounded-lg">
+                        <CogIcon className="h-5 w-5 text-gray-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">Account Information</h3>
+                    </div>
                   </div>
                   <div className="p-6 space-y-6">
                     <div className="flex items-center justify-between">

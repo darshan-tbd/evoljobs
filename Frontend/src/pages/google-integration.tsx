@@ -119,84 +119,121 @@ const GoogleIntegrationPage: React.FC = () => {
             key="overview"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
+            transition={{ duration: 0.6 }}
+            className="space-y-8"
           >
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
                 <div className="flex items-center">
                   <div className="p-2 bg-green-100 rounded-lg">
                     <CheckCircleIcon className="h-6 w-6 text-green-600" />
                   </div>
                   <div className="ml-4">
                     <p className="text-2xl font-bold text-gray-900">10x</p>
-                    <p className="text-gray-600">Faster Applications</p>
+                    <p className="text-sm font-medium text-gray-600">Faster Applications</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
               
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
                 <div className="flex items-center">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <StarIcon className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="ml-4">
                     <p className="text-2xl font-bold text-gray-900">98%</p>
-                    <p className="text-gray-600">Success Rate</p>
+                    <p className="text-sm font-medium text-gray-600">Success Rate</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
               
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
                 <div className="flex items-center">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <ClockIcon className="h-6 w-6 text-purple-600" />
                   </div>
                   <div className="ml-4">
                     <p className="text-2xl font-bold text-gray-900">10h</p>
-                    <p className="text-gray-600">Time Saved Weekly</p>
+                    <p className="text-sm font-medium text-gray-600">Time Saved Weekly</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Benefits Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <RocketLaunchIcon className="h-6 w-6 text-blue-600 mr-2" />
-                  Why Choose Google Integration?
-                </h3>
-                <ul className="space-y-3">
-                  {benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <PlayIcon className="h-6 w-6 text-purple-600 mr-2" />
-                  How It Works
-                </h3>
-                <div className="space-y-4">
-                  {steps.map((item, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                        {item.step}
-                      </div>
-                      <div className="ml-4">
-                        <h4 className="font-semibold text-gray-900">{item.title}</h4>
-                        <p className="text-gray-600 text-sm">{item.desc}</p>
-                      </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <RocketLaunchIcon className="h-5 w-5 text-blue-600" />
                     </div>
-                  ))}
+                    <h3 className="text-lg font-semibold text-gray-900">Why Choose Google Integration?</h3>
+                  </div>
                 </div>
-              </div>
+                <div className="p-6">
+                  <ul className="space-y-3">
+                    {benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start">
+                        <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <PlayIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">How It Works</h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {steps.map((item, index) => (
+                      <div key={index} className="flex items-start">
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                          {item.step}
+                        </div>
+                        <div className="ml-4">
+                          <h4 className="font-semibold text-gray-900">{item.title}</h4>
+                          <p className="text-gray-600 text-sm">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
         );
@@ -207,7 +244,7 @@ const GoogleIntegrationPage: React.FC = () => {
             key="integration"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.6 }}
           >
           <GoogleIntegrationComponent />
           </motion.div>
@@ -219,7 +256,7 @@ const GoogleIntegrationPage: React.FC = () => {
             key="features"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.6 }}
             className="space-y-6"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -229,11 +266,16 @@ const GoogleIntegrationPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200"
                 >
                   <div className="flex items-start">
-                    <div className={`p-3 rounded-lg bg-gray-50`}>
-                      <feature.icon className={`h-8 w-8 ${feature.color}`} />
+                    <div className={`p-3 rounded-lg ${
+                      feature.color === 'text-blue-600' ? 'bg-blue-100' :
+                      feature.color === 'text-green-600' ? 'bg-green-100' :
+                      feature.color === 'text-purple-600' ? 'bg-purple-100' :
+                      'bg-orange-100'
+                    }`}>
+                      <feature.icon className={`h-6 w-6 ${feature.color}`} />
                     </div>
                     <div className="ml-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
@@ -252,12 +294,14 @@ const GoogleIntegrationPage: React.FC = () => {
             key="security"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.6 }}
             className="space-y-6"
           >
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
               <div className="flex items-start">
-                <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3 mt-0.5" />
+                <div className="p-2 bg-yellow-100 rounded-lg mr-3 mt-0.5">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600" />
+                </div>
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800 mb-2">Security & Privacy</h3>
                   <p className="text-yellow-700">
@@ -267,24 +311,37 @@ const GoogleIntegrationPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <ShieldCheckIcon className="h-6 w-6 text-green-600 mr-2" />
-                Security Features
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {securityFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <ShieldCheckIcon className="h-5 w-5 text-green-600" />
                   </div>
-                ))}
+                  <h3 className="text-lg font-semibold text-gray-900">Security Features</h3>
+                </div>
               </div>
-            </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {securityFeatures.map((feature, index) => (
+                    <div key={index} className="flex items-start">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
               <div className="flex items-start">
-                <CheckCircleIcon className="h-6 w-6 text-green-600 mr-3 mt-0.5" />
+                <div className="p-2 bg-green-100 rounded-lg mr-3 mt-0.5">
+                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                </div>
                 <div>
                   <h3 className="text-lg font-semibold text-green-800 mb-2">Compliance & Certifications</h3>
                   <p className="text-green-700">
@@ -313,7 +370,7 @@ const GoogleIntegrationPage: React.FC = () => {
                 <li>
                   <button
                     onClick={() => handleBreadcrumbClick('/')}
-                    className="text-gray-400 hover:text-gray-500 flex items-center"
+                    className="text-gray-400 hover:text-gray-500 flex items-center transition-colors"
                   >
                     <HomeIcon className="h-5 w-5 mr-1" />
                     Home
@@ -324,7 +381,7 @@ const GoogleIntegrationPage: React.FC = () => {
                     <ArrowRightIcon className="h-5 w-5 text-gray-400 mx-2" />
                     <button
                       onClick={() => handleBreadcrumbClick('/settings')}
-                      className="text-gray-400 hover:text-gray-500 flex items-center"
+                      className="text-gray-400 hover:text-gray-500 flex items-center transition-colors"
                     >
                       <CogIcon className="h-5 w-5 mr-1" />
                       Settings
@@ -343,24 +400,35 @@ const GoogleIntegrationPage: React.FC = () => {
               </ol>
             </nav>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Google Integration</h1>
-                <p className="text-gray-600 mt-2">
-                  Supercharge your job search with automated applications through Gmail API
-                </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <LinkIcon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900">Google Integration</h1>
+                  </div>
+                  <p className="text-gray-600">
+                    Supercharge your job search with automated applications through Gmail API
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <StarIcon className="h-4 w-4 mr-1" />
+                    Premium Feature
+                  </span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                    Secure
+                  </span>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  <StarIcon className="h-4 w-4 mr-1" />
-                  Premium Feature
-                </span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                  Secure
-                </span>
-              </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -378,7 +446,7 @@ const GoogleIntegrationPage: React.FC = () => {
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors`}
                   >
                     <Icon className="h-5 w-5 mr-2" />
                     {tab.name}

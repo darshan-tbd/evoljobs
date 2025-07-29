@@ -20,6 +20,7 @@ import {
   SparklesIcon,
   EyeIcon
 } from '@heroicons/react/24/outline';
+import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import Layout from '@/components/layout/Layout';
 import { apiClient } from '@/services/authAPI';
 
@@ -39,6 +40,7 @@ interface Job {
   salary_max?: number;
   salary_currency?: string;
   salary_type?: string;
+  salary_display?: string;
   remote_option?: string;
   external_url?: string;
   required_skills?: Array<{ id: number; name: string }>;
@@ -94,6 +96,10 @@ const JobsPage: React.FC = () => {
   const [totalJobs, setTotalJobs] = useState(0);
   const [pageSize] = useState(9); // 9 jobs per page (3 jobs per row)
 
+  // Saved jobs state
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+  const [savingJobs, setSavingJobs] = useState<Set<string>>(new Set());
+
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -114,7 +120,7 @@ const JobsPage: React.FC = () => {
   ];
 
   const remoteOptions = [
-    { value: 'onsite', label: 'On-site', icon: '🏢' },
+    { value: 'onsite', label: 'On-site', icon: '🏠' },
     { value: 'remote', label: 'Remote', icon: '🏠' },
     { value: 'hybrid', label: 'Hybrid', icon: '🔄' },
   ];
@@ -125,6 +131,92 @@ const JobsPage: React.FC = () => {
     { value: 'salary_min', label: 'Salary High-Low', icon: '💰' },
     { value: 'views_count', label: 'Most Viewed', icon: '👁️' },
   ];
+
+  // Fetch saved jobs when component mounts
+  const fetchSavedJobs = useCallback(async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/v1/jobs/saved-jobs/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const savedJobIds = new Set<string>(
+          (data.results || [])
+            .map((savedJob: any) => savedJob.job?.id || savedJob.id)
+            .filter((id: any) => id && typeof id === 'string')
+        );
+        setSavedJobs(savedJobIds);
+      } else {
+        console.error('Failed to fetch saved jobs:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching saved jobs:', error);
+    }
+  }, [isAuthenticated]);
+
+  // Save/Unsave job function
+  const handleSaveJob = async (jobId: string) => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to save jobs');
+      router.push('/login');
+      return;
+    }
+
+    const isSaved = savedJobs.has(jobId);
+    setSavingJobs(prev => new Set(prev).add(jobId));
+
+    try {
+      // Use the toggle endpoint which handles both save/unsave
+      const response = await fetch('http://127.0.0.1:8000/api/v1/jobs/saved-jobs/toggle/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ job: jobId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.saved) {
+          // Job was saved
+          setSavedJobs(prev => {
+            const newSet = new Set(prev);
+            newSet.add(jobId);
+            return newSet;
+          });
+          toast.success('Job saved successfully');
+        } else {
+          // Job was unsaved
+          setSavedJobs(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(jobId);
+            return newSet;
+          });
+          toast.success('Job removed from saved jobs');
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update saved job');
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving job:', error);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setSavingJobs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
+      });
+    }
+  };
 
   const fetchJobs = useCallback(async (page = 1) => {
     try {
@@ -152,22 +244,33 @@ const JobsPage: React.FC = () => {
       setCurrentPage(page);
     } catch (err: any) {
       console.error('Error fetching jobs:', err);
-      setError(err.message || 'Failed to fetch jobs');
-      setJobs([]);
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to fetch jobs';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearchQuery, locationFilter, jobTypeFilter, experienceFilter, remoteFilter, pageSize, sortBy, sortOrder]);
+  }, [debouncedSearchQuery, locationFilter, jobTypeFilter, experienceFilter, remoteFilter, sortBy, sortOrder, pageSize]);
 
-  // Fetch jobs when filters change
   useEffect(() => {
     fetchJobs(1);
   }, [fetchJobs]);
 
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      fetchJobs(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  useEffect(() => {
+    fetchSavedJobs();
+  }, [fetchSavedJobs]);
+
+  const handleApply = (job: Job) => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to apply for jobs');
+      router.push('/login');
+      return;
+    }
+
+    if (job.external_url) {
+      window.open(job.external_url, '_blank');
+    } else {
+      router.push(`/jobs/${job.slug || job.id}/apply`);
     }
   };
 
@@ -182,104 +285,11 @@ const JobsPage: React.FC = () => {
     }
   };
 
-  const handleApply = async (job: Job) => {
-    // Check if user is authenticated first
-    if (!isAuthenticated) {
-      // Redirect to login page with current page as redirect parameter
-      router.push(`/login?redirect=${encodeURIComponent(router.asPath)}`);
-      toast.error('Please log in to apply for this job');
-      return;
-    }
-
-    if (job.external_url) {
-      try {
-        // First, create external application entry
-        await trackExternalApplication(job.id, job.external_url);
-        
-        // Show success message
-        toast.success('Application tracked! Redirecting to external site...');
-        
-        // Then redirect to external URL
-        window.open(job.external_url, '_blank');
-      } catch (error: any) {
-        console.error('Failed to track external application:', error);
-        toast.error(error.message || 'Failed to track application. Please try again.');
-      }
-    } else {
-      // Redirect to full application form (same as job details page)
-      router.push(`/jobs/${job.slug || job.id}/apply`);
-    }
-  };
-
-  const trackExternalApplication = async (jobId: string, externalUrl: string) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      // Authentication is already checked in handleApply, so token should exist
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/api/v1/applications/external-applications/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          job: jobId,
-          external_url: externalUrl
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('External application created successfully:', data);
-        return data;
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to create external application:', errorData);
-        
-        if (errorData.error === 'You have already applied to this job') {
-          throw new Error('You have already applied to this job!');
-        } else {
-          throw new Error(errorData.error || 'Failed to track external application');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to track external application:', error);
-      throw error;
-    }
-  };
-
-
-
-  const formatSalary = (job: Job) => {
-    if (!job.salary_min && !job.salary_max) return 'Salary not specified';
-    
-    const currency = job.salary_currency || 'USD';
-    const type = job.salary_type || 'yearly';
-    
-    if (job.salary_min && job.salary_max) {
-      return `${currency} ${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()} / ${type}`;
-    } else if (job.salary_min) {
-      return `${currency} ${job.salary_min.toLocaleString()}+ / ${type}`;
-    } else if (job.salary_max) {
-      return `${currency} Up to ${job.salary_max.toLocaleString()} / ${type}`;
-    }
-    
-    return 'Salary not specified';
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
-    if (diffDays <= 7) return `${diffDays - 1} days ago`;
-    return date.toLocaleDateString();
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    fetchJobs(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const clearAllFilters = () => {
@@ -288,11 +298,46 @@ const JobsPage: React.FC = () => {
     setJobTypeFilter('');
     setExperienceFilter('');
     setRemoteFilter('');
+    setSortBy('created_at');
+    setSortOrder('desc');
   };
 
   const hasActiveFilters = debouncedSearchQuery || locationFilter || jobTypeFilter || experienceFilter || remoteFilter;
 
-  // Prevent hydration mismatch
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatSalary = (job: Job) => {
+    // Use the backend's formatted salary_display if available
+    if (job.salary_display) {
+      return job.salary_display;
+    }
+    
+    // Fallback to manual formatting if salary_display is not available
+    if (!job.salary_min && !job.salary_max) return 'Salary not specified';
+    
+    const currency = job.salary_currency || '$';
+    const type = job.salary_type || 'year';
+    
+    if (job.salary_min && job.salary_max) {
+      return `${currency}${job.salary_min.toLocaleString()} - ${currency}${job.salary_max.toLocaleString()} per ${type}`;
+    }
+    if (job.salary_min) {
+      return `${currency}${job.salary_min.toLocaleString()}+ per ${type}`;
+    }
+    if (job.salary_max) {
+      return `Up to ${currency}${job.salary_max.toLocaleString()} per ${type}`;
+    }
+    
+    return 'Salary not specified';
+  };
+
+  // Check if component is mounted
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -558,13 +603,13 @@ const JobsPage: React.FC = () => {
             
             {!loading && totalJobs > 0 && (
               <div className="mt-4 sm:mt-0 flex space-x-2">
-                                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="inline-flex items-center px-4 py-2 border border-blue-600 rounded-lg shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  >
-                    <FunnelIcon className="h-4 w-4 mr-2" />
-                    {showFilters ? 'Hide' : 'Show'} Filters
-                  </button>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="inline-flex items-center px-4 py-2 border border-blue-600 rounded-lg shadow-sm text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  <FunnelIcon className="h-4 w-4 mr-2" />
+                  {showFilters ? 'Hide' : 'Show'} Filters
+                </button>
               </div>
             )}
           </div>
@@ -614,126 +659,147 @@ const JobsPage: React.FC = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence>
-                  {jobs.map((job, index) => (
-                    <motion.div
-                      key={job.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden ${
-                        job.is_featured ? 'ring-2 ring-yellow-400' : ''
-                      }`}
-                    >
-                      {job.is_featured && (
-                        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-medium px-3 py-1 text-center">
-                          <SparklesIcon className="h-3 w-3 inline mr-1" />
-                          Featured Job
-                        </div>
-                      )}
-                      
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 
-                              className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer line-clamp-2 transition-colors"
-                              onClick={() => router.push(`/jobs/${job.slug || job.id}`)}
-                            >
-                              {job.title}
-                            </h3>
+                  {jobs.map((job, index) => {
+                    const isSaved = savedJobs.has(job.id);
+                    const isSaving = savingJobs.has(job.id);
+                    
+                    return (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden ${
+                          job.is_featured ? 'ring-2 ring-yellow-400' : ''
+                        }`}
+                      >
+                        {job.is_featured && (
+                          <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-medium px-3 py-1 text-center">
+                            <SparklesIcon className="h-3 w-3 inline mr-1" />
+                            Featured Job
                           </div>
-                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors ml-2">
-                            <BookmarkIcon className="h-5 w-5" />
-                          </button>
-                        </div>
+                        )}
                         
-                        <div className="space-y-3 mb-4">
-                          <div className="flex items-center text-gray-600">
-                            <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span className="truncate">{job.company.name}</span>
-                          </div>
-                          
-                          {job.location && (
-                            <div className="flex items-center text-gray-600">
-                              <MapPinIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                              <span className="truncate">{job.location.name}</span>
+                        <div className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h3 
+                                className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer line-clamp-2 transition-colors"
+                                onClick={() => router.push(`/jobs/${job.slug || job.id}`)}
+                              >
+                                {job.title}
+                              </h3>
                             </div>
-                          )}
-                          
-                          <div className="flex items-center text-gray-600">
-                            <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span>{formatDate(job.created_at)}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {jobTypes.find(t => t.value === job.job_type)?.label || job.job_type}
-                          </span>
-                          {job.remote_option && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {job.remote_option}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center mb-4">
-                          <CurrencyDollarIcon className="h-4 w-4 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-600">{formatSalary(job)}</span>
-                        </div>
-
-                        {job.description && (
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                            {job.description}
-                          </p>
-                        )}
-
-                        {job.required_skills && job.required_skills.length > 0 && (
-                          <div className="mb-4">
-                            <div className="flex flex-wrap gap-1">
-                              {job.required_skills.slice(0, 3).map((skill) => (
-                                <span
-                                  key={skill.id}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
-                                >
-                                  {skill.name}
-                                </span>
-                              ))}
-                              {job.required_skills.length > 3 && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                                  +{job.required_skills.length - 3} more
-                                </span>
+                            <button 
+                              onClick={() => handleSaveJob(job.id)}
+                              disabled={isSaving}
+                              className={`p-2 transition-colors ml-2 ${
+                                isSaving 
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : isSaved 
+                                    ? 'text-blue-600 hover:text-blue-700' 
+                                    : 'text-gray-400 hover:text-blue-600'
+                              }`}
+                            >
+                              {isSaving ? (
+                                <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                              ) : isSaved ? (
+                                <BookmarkSolidIcon className="h-5 w-5" />
+                              ) : (
+                                <BookmarkIcon className="h-5 w-5" />
                               )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex space-x-2 flex-1">
-                            <button
-                              onClick={() => router.push(`/jobs/${job.slug || job.id}`)}
-                              className="px-4 py-2 border border-blue-600 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                            >
-                              View Details
-                            </button>
-                            <button
-                              onClick={() => handleApply(job)}
-                              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
-                            >
-                              Apply Now
                             </button>
                           </div>
                           
-                          {job.views_count !== undefined && (
-                            <div className="flex items-center text-xs text-gray-500 ml-3">
-                              <EyeIcon className="h-3 w-3 mr-1" />
-                              {job.views_count}
+                          <div className="space-y-3 mb-4">
+                            <div className="flex items-center text-gray-600">
+                              <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                              <span className="truncate">{job.company.name}</span>
+                            </div>
+                            
+                            {job.location && (
+                              <div className="flex items-center text-gray-600">
+                                <MapPinIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">{job.location.name}</span>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center text-gray-600">
+                              <ClockIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                              <span>{formatDate(job.created_at)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {jobTypes.find(t => t.value === job.job_type)?.label || job.job_type}
+                            </span>
+                            {job.remote_option && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {job.remote_option}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center mb-4">
+                            <CurrencyDollarIcon className="h-4 w-4 text-gray-400 mr-2" />
+                            <span className="text-sm text-gray-600">{formatSalary(job)}</span>
+                          </div>
+
+                          {job.description && (
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                              {job.description}
+                            </p>
+                          )}
+
+                          {job.required_skills && job.required_skills.length > 0 && (
+                            <div className="mb-4">
+                              <div className="flex flex-wrap gap-1">
+                                {job.required_skills.slice(0, 3).map((skill) => (
+                                  <span
+                                    key={skill.id}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700"
+                                  >
+                                    {skill.name}
+                                  </span>
+                                ))}
+                                {job.required_skills.length > 3 && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                    +{job.required_skills.length - 3} more
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex space-x-2 flex-1">
+                              <button
+                                onClick={() => router.push(`/jobs/${job.slug || job.id}`)}
+                                className="px-4 py-2 border border-blue-600 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => handleApply(job)}
+                                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                              >
+                                Apply Now
+                              </button>
+                            </div>
+                            
+                            {job.views_count !== undefined && (
+                              <div className="flex items-center text-xs text-gray-500 ml-3">
+                                <EyeIcon className="h-3 w-3 mr-1" />
+                                {job.views_count}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
 

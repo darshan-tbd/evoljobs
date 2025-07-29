@@ -31,6 +31,7 @@ interface Application {
     };
     salary_min?: number;
     salary_max?: number;
+    salary_display?: string;
     job_type: string;
   };
   status: 'pending' | 'reviewing' | 'accepted' | 'rejected' | 'withdrawn';
@@ -87,6 +88,7 @@ const ApplicationsPage: React.FC = () => {
             },
             salary_min: app.job?.salary_min,
             salary_max: app.job?.salary_max,
+            salary_display: app.job?.salary_display,
             job_type: app.job?.job_type || 'full_time'
           },
           status: app.status || 'pending',
@@ -149,11 +151,17 @@ const ApplicationsPage: React.FC = () => {
     });
   };
 
-  const formatSalary = (min?: number, max?: number) => {
-    if (!min && !max) return 'Salary not specified';
-    if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
-    if (min) return `$${min.toLocaleString()}+`;
-    if (max) return `Up to $${max.toLocaleString()}`;
+  const formatSalary = (job: Application['job']) => {
+    // Use the backend's formatted salary_display if available
+    if (job.salary_display) {
+      return job.salary_display;
+    }
+    
+    // Fallback to manual formatting if salary_display is not available
+    if (!job.salary_min && !job.salary_max) return 'Salary not specified';
+    if (job.salary_min && job.salary_max) return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
+    if (job.salary_min) return `$${job.salary_min.toLocaleString()}+`;
+    if (job.salary_max) return `Up to $${job.salary_max.toLocaleString()}`;
     return 'Salary not specified';
   };
 
@@ -331,7 +339,7 @@ const ApplicationsPage: React.FC = () => {
                           </div>
                           <div className="flex items-center">
                             <CurrencyDollarIcon className="h-4 w-4 mr-1" />
-                            <span>{formatSalary(application.job.salary_min, application.job.salary_max)}</span>
+                            <span>{formatSalary(application.job)}</span>
                           </div>
                         </div>
 

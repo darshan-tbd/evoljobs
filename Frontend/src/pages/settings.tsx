@@ -1,61 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  TextField,
-  Button,
-  Switch,
-  FormControlLabel,
-  Alert,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Chip,
-  Autocomplete,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  OutlinedInput,
-  Checkbox,
-  ListItemButton,
-} from '@mui/material';
-import {
-  Security as SecurityIcon,
-  Notifications as NotificationsIcon,
-  Palette as ThemeIcon,
-  Language as LanguageIcon,
-  DeleteForever as DeleteIcon,
-  Warning as WarningIcon,
-  Save as SaveIcon,
-  Lock as LockIcon,
-  Email as EmailIcon,
-  Work as WorkIcon,
-  Category as CategoryIcon,
-} from '@mui/icons-material';
-
-interface JobCategory {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  is_active: boolean;
-}
 import { useAuth } from '../hooks/useAuth';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import {
+  BellIcon,
+  ShieldCheckIcon,
+  PaintBrushIcon,
+  LockClosedIcon,
+  ExclamationTriangleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  TrashIcon,
+  CogIcon
+} from '@heroicons/react/24/outline';
 import Layout from '@/components/layout/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import GoogleIntegrationCard from '../components/GoogleIntegrationCard';
@@ -64,10 +22,11 @@ const SettingsPage: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -80,11 +39,6 @@ const SettingsPage: React.FC = () => {
     twoFactorAuth: false,
   });
 
-  // Job categories state
-  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
-  const [preferredCategories, setPreferredCategories] = useState<JobCategory[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
-
   // Password change state
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -92,87 +46,11 @@ const SettingsPage: React.FC = () => {
     confirmPassword: '',
   });
 
-  // Fetch job categories and user preferences
-  useEffect(() => {
-    const fetchJobCategories = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/job-categories/`);
-        if (response.ok) {
-          const data = await response.json();
-          setJobCategories(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch job categories:', error);
-      }
-    };
-
-    const fetchUserPreferences = async () => {
-      if (!user) return;
-      
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/profile/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData.preferred_job_categories) {
-            const userCategoryIds = userData.preferred_job_categories;
-            setPreferredCategories(jobCategories.filter(cat => userCategoryIds.includes(cat.id)));
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch user preferences:', error);
-      }
-    };
-
-    fetchJobCategories();
-    if (jobCategories.length > 0) {
-      fetchUserPreferences();
-    }
-  }, [user, jobCategories.length]);
-
   const handleSettingChange = (setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setSettings(prev => ({
       ...prev,
       [setting]: event.target.checked
     }));
-  };
-
-  const saveJobPreferences = async () => {
-    setCategoriesLoading(true);
-    setError('');
-    
-    try {
-      const token = localStorage.getItem('access_token');
-      const categoryIds = preferredCategories.map(cat => cat.id);
-      
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/update-preferences/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          preferred_job_categories: categoryIds,
-        }),
-      });
-
-      if (response.ok) {
-        setSuccess('Job preferences updated successfully!');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to update preferences');
-      }
-    } catch (err) {
-      setError('Failed to update preferences. Please try again.');
-    } finally {
-      setCategoriesLoading(false);
-    }
   };
 
   const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,15 +63,13 @@ const SettingsPage: React.FC = () => {
 
   const saveSettings = async () => {
     setLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setSuccess('Settings saved successfully!');
+      toast.success('Settings saved successfully!');
     } catch (err) {
-      setError('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -201,12 +77,16 @@ const SettingsPage: React.FC = () => {
 
   const changePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
     setLoading(true);
-    setError('');
 
     try {
       const token = localStorage.getItem('access_token');
@@ -224,7 +104,7 @@ const SettingsPage: React.FC = () => {
       });
 
       if (response.ok) {
-        setSuccess('Password changed successfully!');
+        toast.success('Password changed successfully!');
         setPasswordChangeOpen(false);
         setPasswordData({
           currentPassword: '',
@@ -233,10 +113,10 @@ const SettingsPage: React.FC = () => {
         });
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Failed to change password');
+        toast.error(errorData.detail || 'Failed to change password');
       }
     } catch (err) {
-      setError('Failed to change password. Please try again.');
+      toast.error('Failed to change password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -244,7 +124,6 @@ const SettingsPage: React.FC = () => {
 
   const deleteAccount = async () => {
     setLoading(true);
-    setError('');
 
     try {
       const token = localStorage.getItem('access_token');
@@ -259,12 +138,13 @@ const SettingsPage: React.FC = () => {
         // Logout and redirect
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        toast.success('Account deleted successfully');
         router.push('/');
       } else {
-        setError('Failed to delete account. Please try again.');
+        toast.error('Failed to delete account. Please try again.');
       }
     } catch (err) {
-      setError('Failed to delete account. Please try again.');
+      toast.error('Failed to delete account. Please try again.');
     } finally {
       setLoading(false);
       setDeleteDialogOpen(false);
@@ -274,410 +154,408 @@ const SettingsPage: React.FC = () => {
   return (
     <Layout>
       <ProtectedRoute>
-        <Container maxWidth="md" sx={{ py: 4 }}>
-          {/* Header */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Settings
-            </Typography>
-            <Typography variant="h6" color="textSecondary">
-              Manage your account preferences and security settings
-            </Typography>
-          </Box>
+        <div className="min-h-screen bg-gray-50 py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-8"
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <CogIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+              </div>
+              <p className="text-gray-600">Manage your account preferences and security settings</p>
+            </motion.div>
 
-          {/* Success/Error Messages */}
-          {success && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {success}
-            </Alert>
-          )}
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Grid container spacing={3}>
-            {/* Job Preferences */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <WorkIcon sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="h6">Job Preferences</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
+            <div className="space-y-6">
+              {/* Notification Settings */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <BellIcon className="h-5 w-5 text-green-600" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900">Notification Preferences</h2>
+                  </div>
                   
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                    Select the types of jobs you're interested in. This helps us show you relevant job recommendations and controls which jobs you'll auto-apply to.
-                  </Typography>
-                  
-                  <Autocomplete
-                    multiple
-                    id="job-categories"
-                    options={jobCategories}
-                    value={preferredCategories}
-                    onChange={(event, newValue) => setPreferredCategories(newValue)}
-                    getOptionLabel={(option) => option.name}
-                    renderTags={(value, getTagProps) =>
-                      value.map((option, index) => (
-                        <Chip
-                          variant="outlined"
-                          label={option.name}
-                          {...getTagProps({ index })}
-                          key={option.id}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">Email Notifications</h3>
+                        <p className="text-sm text-gray-600">Receive notifications about your applications</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.emailNotifications}
+                          onChange={handleSettingChange('emailNotifications')}
+                          className="sr-only peer"
                         />
-                      ))
-                    }
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        variant="outlined"
-                        label="Preferred Job Categories"
-                        placeholder="Search and select job categories..."
-                      />
-                    )}
-                    sx={{ mb: 2 }}
-                  />
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="textSecondary">
-                      {preferredCategories.length} categories selected
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={saveJobPreferences}
-                      disabled={categoriesLoading}
-                      startIcon={categoriesLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-                    >
-                      {categoriesLoading ? 'Saving...' : 'Save Preferences'}
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-            {/* Notification Settings */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <NotificationsIcon sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="h6">Notification Preferences</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">Job Alerts</h3>
+                        <p className="text-sm text-gray-600">Get notified about new job opportunities</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.jobAlerts}
+                          onChange={handleSettingChange('jobAlerts')}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">Marketing Emails</h3>
+                        <p className="text-sm text-gray-600">Receive updates and promotional content</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.marketingEmails}
+                          onChange={handleSettingChange('marketingEmails')}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* App Preferences */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <PaintBrushIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900">App Preferences</h2>
+                  </div>
                   
-                  <List>
-                    <ListItem>
-                      <ListItemText
-                        primary="Email Notifications"
-                        secondary="Receive notifications about your applications"
-                      />
-                      <ListItemSecondaryAction>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={settings.emailNotifications}
-                              onChange={handleSettingChange('emailNotifications')}
-                            />
-                          }
-                          label=""
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">Dark Mode</h3>
+                        <p className="text-sm text-gray-600">Switch to dark theme</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.darkMode}
+                          onChange={handleSettingChange('darkMode')}
+                          className="sr-only peer"
                         />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    
-                    <ListItem>
-                      <ListItemText
-                        primary="Job Alerts"
-                        secondary="Get notified about new job opportunities"
-                      />
-                      <ListItemSecondaryAction>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={settings.jobAlerts}
-                              onChange={handleSettingChange('jobAlerts')}
-                            />
-                          }
-                          label=""
-                        />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    
-                    <ListItem>
-                      <ListItemText
-                        primary="Marketing Emails"
-                        secondary="Receive updates and promotional content"
-                      />
-                      <ListItemSecondaryAction>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={settings.marketingEmails}
-                              onChange={handleSettingChange('marketingEmails')}
-                            />
-                          }
-                          label=""
-                        />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
 
-            {/* App Preferences */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <ThemeIcon sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="h6">App Preferences</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">Auto Save</h3>
+                        <p className="text-sm text-gray-600">Automatically save form data</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.autoSave}
+                          onChange={handleSettingChange('autoSave')}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Security Settings */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <ShieldCheckIcon className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900">Security</h2>
+                  </div>
                   
-                  <List>
-                    <ListItem>
-                      <ListItemText
-                        primary="Dark Mode"
-                        secondary="Switch to dark theme"
-                      />
-                      <ListItemSecondaryAction>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={settings.darkMode}
-                              onChange={handleSettingChange('darkMode')}
-                            />
-                          }
-                          label=""
-                        />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    
-                    <ListItem>
-                      <ListItemText
-                        primary="Auto Save"
-                        secondary="Automatically save form data"
-                      />
-                      <ListItemSecondaryAction>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={settings.autoSave}
-                              onChange={handleSettingChange('autoSave')}
-                            />
-                          }
-                          label=""
-                        />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">Change Password</h3>
+                          <p className="text-sm text-gray-600">Update your account password</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setPasswordChangeOpen(true)}
+                        className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        Change
+                      </button>
+                    </div>
 
-            {/* Security Settings */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <SecurityIcon sx={{ mr: 2, color: 'primary.main' }} />
-                    <Typography variant="h6">Security</Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-                  
-                  <List>
-                    <ListItem>
-                      <ListItemIcon>
-                        <LockIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Change Password"
-                        secondary="Update your account password"
-                      />
-                      <ListItemSecondaryAction>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => setPasswordChangeOpen(true)}
-                        >
-                          Change
-                        </Button>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    
-                    <ListItem>
-                      <ListItemText
-                        primary="Two-Factor Authentication"
-                        secondary="Add an extra layer of security"
-                      />
-                      <ListItemSecondaryAction>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={settings.twoFactorAuth}
-                              onChange={handleSettingChange('twoFactorAuth')}
-                            />
-                          }
-                          label=""
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">Two-Factor Authentication</h3>
+                        <p className="text-sm text-gray-600">Add an extra layer of security</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={settings.twoFactorAuth}
+                          onChange={handleSettingChange('twoFactorAuth')}
+                          className="sr-only peer"
                         />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-            {/* Google Integration */}
-            <Grid item xs={12}>
-              <GoogleIntegrationCard />
-            </Grid>
+              {/* Google Integration */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <GoogleIntegrationCard />
+              </motion.div>
 
-            {/* Save Button */}
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+              {/* Save Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex justify-start"
+              >
+                <button
                   onClick={saveSettings}
                   disabled={loading}
+                  className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? 'Saving...' : 'Save Settings'}
-                </Button>
-              </Box>
-            </Grid>
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <CogIcon className="h-5 w-5" />
+                  )}
+                  <span>{loading ? 'Saving...' : 'Save Settings'}</span>
+                </button>
+              </motion.div>
 
-            {/* Danger Zone */}
-            <Grid item xs={12}>
-              <Card sx={{ border: '1px solid', borderColor: 'error.main' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <WarningIcon sx={{ mr: 2, color: 'error.main' }} />
-                    <Typography variant="h6" color="error">
-                      Danger Zone
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
+              {/* Danger Zone */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden"
+              >
+                <div className="p-6">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-red-900">Danger Zone</h2>
+                  </div>
                   
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  <p className="text-gray-600 mb-4">
                     These actions cannot be undone. Please proceed with caution.
-                  </Typography>
+                  </p>
                   
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
+                  <button
                     onClick={() => setDeleteDialogOpen(true)}
+                    className="flex items-center space-x-2 px-4 py-2 text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
                   >
-                    Delete Account
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+                    <TrashIcon className="h-4 w-4" />
+                    <span>Delete Account</span>
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
 
-          {/* Password Change Dialog */}
-          <Dialog
-            open={passwordChangeOpen}
-            onClose={() => setPasswordChangeOpen(false)}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>Change Password</DialogTitle>
-            <DialogContent>
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    type="password"
-                    label="Current Password"
-                    name="currentPassword"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    type="password"
-                    label="New Password"
-                    name="newPassword"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    type="password"
-                    label="Confirm New Password"
-                    name="confirmPassword"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                  />
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setPasswordChangeOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={changePassword}
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={20} /> : 'Change Password'}
-              </Button>
-            </DialogActions>
-          </Dialog>
+        {/* Password Change Modal */}
+        {passwordChangeOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        name="currentPassword"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showCurrentPassword ? (
+                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
 
-          {/* Delete Account Dialog */}
-          <Dialog
-            open={deleteDialogOpen}
-            onClose={() => setDeleteDialogOpen(false)}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>Delete Account</DialogTitle>
-            <DialogContent>
-              <Alert severity="error" sx={{ mb: 2 }}>
-                This action cannot be undone!
-              </Alert>
-              <Typography variant="body1">
-                Are you sure you want to delete your account? This will permanently remove all your data, including:
-              </Typography>
-              <List>
-                <ListItem>
-                  <ListItemText primary="• Your profile information" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="• Job applications and history" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="• Saved jobs and preferences" />
-                </ListItem>
-                <ListItem>
-                  <ListItemText primary="• All associated data" />
-                </ListItem>
-              </List>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={deleteAccount}
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={20} /> : 'Delete Account'}
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Container>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showNewPassword ? (
+                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        value={passwordData.confirmPassword}
+                        onChange={handlePasswordChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={() => setPasswordChangeOpen(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={changePassword}
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? 'Changing...' : 'Change Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Account Modal */}
+        {deleteDialogOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">Delete Account</h3>
+                </div>
+                
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <p className="text-red-800 font-medium">This action cannot be undone!</p>
+                </div>
+                
+                <p className="text-gray-600 mb-4">
+                  Are you sure you want to delete your account? This will permanently remove all your data, including:
+                </p>
+                
+                <ul className="text-gray-600 space-y-1 mb-6">
+                  <li>• Your profile information</li>
+                  <li>• Job applications and history</li>
+                  <li>• Saved jobs and preferences</li>
+                  <li>• All associated data</li>
+                </ul>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setDeleteDialogOpen(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={deleteAccount}
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? 'Deleting...' : 'Delete Account'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </ProtectedRoute>
     </Layout>
   );
