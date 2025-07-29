@@ -4,54 +4,26 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Switch,
-  FormControlLabel,
-  TextField,
-  Chip,
-  Alert,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Tooltip,
-  LinearProgress,
-  Divider,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-} from '@mui/material';
-import {
-  Google,
-  Email,
-  Settings,
-  PlayArrow,
-  Stop,
-  Refresh,
-  CheckCircle,
-  Error,
-  Warning,
-  Info,
-  Timeline,
-  Reply,
-  Assignment,
-} from '@mui/icons-material';
+  LinkIcon,
+  EnvelopeIcon,
+  CogIcon,
+  PlayIcon,
+  StopIcon,
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  DocumentTextIcon,
+  ClockIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 interface GoogleIntegration {
   id: string;
@@ -120,8 +92,6 @@ const GoogleIntegrationComponent: React.FC = () => {
   const [emails, setEmails] = useState<EmailRecord[]>([]);
   const [responses, setResponses] = useState<EmailResponse[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
   const [openFiltersDialog, setOpenFiltersDialog] = useState(false);
   const [autoApplyFilters, setAutoApplyFilters] = useState({
     keywords: '',
@@ -154,7 +124,7 @@ const GoogleIntegrationComponent: React.FC = () => {
         setAutoApplyFilters(data.integration.auto_apply_filters || {});
       }
     } catch (err) {
-      setError('Failed to load Google integration data');
+      toast.error('Failed to load Google integration data');
     } finally {
       setLoading(false);
     }
@@ -217,7 +187,7 @@ const GoogleIntegrationComponent: React.FC = () => {
         window.location.href = data.authorization_url;
       }
     } catch (err) {
-      setError('Failed to initiate Google OAuth');
+      toast.error('Failed to initiate Google OAuth');
       setLoading(false);
     }
   };
@@ -233,13 +203,13 @@ const GoogleIntegrationComponent: React.FC = () => {
       });
       
       if (response.ok) {
-        setSuccess('Google account disconnected successfully');
+        toast.success('Google account disconnected successfully');
         loadIntegrationData();
       } else {
-        setError('Failed to disconnect Google account');
+        toast.error('Failed to disconnect Google account');
       }
     } catch (err) {
-      setError('Failed to disconnect Google account');
+      toast.error('Failed to disconnect Google account');
     } finally {
       setLoading(false);
     }
@@ -260,13 +230,13 @@ const GoogleIntegrationComponent: React.FC = () => {
       });
       
       if (response.ok) {
-        setSuccess(`Auto-apply ${enabled ? 'enabled' : 'disabled'}`);
+        toast.success(`Auto-apply ${enabled ? 'enabled' : 'disabled'}`);
         loadIntegrationData();
       } else {
-        setError('Failed to update auto-apply settings');
+        toast.error('Failed to update auto-apply settings');
       }
     } catch (err) {
-      setError('Failed to update auto-apply settings');
+      toast.error('Failed to update auto-apply settings');
     }
   };
 
@@ -285,14 +255,14 @@ const GoogleIntegrationComponent: React.FC = () => {
       });
       
       if (response.ok) {
-        setSuccess('Auto-apply filters updated');
+        toast.success('Auto-apply filters updated');
         setOpenFiltersDialog(false);
         loadIntegrationData();
       } else {
-        setError('Failed to update filters');
+        toast.error('Failed to update filters');
       }
     } catch (err) {
-      setError('Failed to update filters');
+      toast.error('Failed to update filters');
     }
   };
 
@@ -311,12 +281,12 @@ const GoogleIntegrationComponent: React.FC = () => {
       });
       
       if (response.ok) {
-        setSuccess('Auto-apply process started');
+        toast.success('Auto-apply process started');
       } else {
-        setError('Failed to start auto-apply process');
+        toast.error('Failed to start auto-apply process');
       }
     } catch (err) {
-      setError('Failed to start auto-apply process');
+      toast.error('Failed to start auto-apply process');
     } finally {
       setLoading(false);
     }
@@ -333,13 +303,13 @@ const GoogleIntegrationComponent: React.FC = () => {
       });
       
       if (response.ok) {
-        setSuccess('Response check started');
+        toast.success('Response check started');
         setTimeout(loadResponses, 2000); // Refresh responses after 2 seconds
       } else {
-        setError('Failed to check responses');
+        toast.error('Failed to check responses');
       }
     } catch (err) {
-      setError('Failed to check responses');
+      toast.error('Failed to check responses');
     } finally {
       setLoading(false);
     }
@@ -347,443 +317,462 @@ const GoogleIntegrationComponent: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'success';
-      case 'expired': return 'warning';
-      case 'error': case 'revoked': return 'error';
-      default: return 'default';
+      case 'connected': return 'bg-green-100 text-green-800';
+      case 'expired': return 'bg-yellow-100 text-yellow-800';
+      case 'error': case 'revoked': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getResponseTypeColor = (type: string) => {
     switch (type) {
-      case 'interview_invitation': return 'success';
-      case 'rejection': return 'error';
-      case 'request_info': return 'warning';
-      case 'auto_reply': return 'default';
-      default: return 'info';
+      case 'interview_invitation': return 'bg-green-100 text-green-800';
+      case 'rejection': return 'bg-red-100 text-red-800';
+      case 'request_info': return 'bg-yellow-100 text-yellow-800';
+      case 'auto_reply': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getEmailStatusColor = (status: string) => {
+    switch (status) {
+      case 'replied': return 'bg-green-100 text-green-800';
+      case 'delivered': return 'bg-blue-100 text-blue-800';
+      case 'failed': case 'bounced': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Alerts */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
-          {success}
-        </Alert>
-      )}
-
-      <Typography variant="h4" gutterBottom>
-        <Google sx={{ mr: 1, verticalAlign: 'middle' }} />
-        Google Integration
-      </Typography>
-
-      <Grid container spacing={3}>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Connection Status Card */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Connection Status
-              </Typography>
-              
-              {integration ? (
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Chip
-                      label={integration.status}
-                      color={getStatusColor(integration.status)}
-                      sx={{ mr: 1 }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {integration.google_email}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    Last sync: {integration.last_sync ? format(new Date(integration.last_sync), 'PPpp') : 'Never'}
-                  </Typography>
-                  
-                  {integration.status === 'connected' && (
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={handleDisconnectGoogle}
-                      disabled={loading}
-                    >
-                      Disconnect Google Account
-                    </Button>
-                  )}
-                  
-                  {integration.last_error && (
-                    <Alert severity="error" sx={{ mt: 2 }}>
-                      {integration.last_error}
-                    </Alert>
-                  )}
-                </Box>
-              ) : (
-                <Box>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    Connect your Google account to enable automated job applications via Gmail.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<Google />}
-                    onClick={handleConnectGoogle}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <LinkIcon className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Connection Status</h3>
+            </div>
+          </div>
+          <div className="p-6">
+            {integration ? (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(integration.status)}`}>
+                    {integration.status}
+                  </span>
+                  <span className="text-sm text-gray-600">{integration.google_email}</span>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  Last sync: {integration.last_sync ? format(new Date(integration.last_sync), 'PPpp') : 'Never'}
+                </div>
+                
+                {integration.status === 'connected' && (
+                  <button
+                    onClick={handleDisconnectGoogle}
                     disabled={loading}
+                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                   >
-                    Connect Google Account
-                  </Button>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+                    {loading ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Disconnecting...
+                      </div>
+                    ) : (
+                      'Disconnect Google Account'
+                    )}
+                  </button>
+                )}
+                
+                {integration.last_error && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
+                    <ExclamationCircleIcon className="h-5 w-5 mr-2" />
+                    {integration.last_error}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-gray-700">
+                  Connect your Google account to enable automated job applications via Gmail.
+                </p>
+                <button
+                  onClick={handleConnectGoogle}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      Connect Google Account
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         {/* Auto-Apply Settings Card */}
         {integration?.status === 'connected' && (
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Auto-Apply Settings
-                </Typography>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+          >
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CogIcon className="h-5 w-5 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Auto-Apply Settings</h3>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex items-center">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={integration.auto_apply_enabled}
+                    onChange={(e) => handleAutoApplyToggle(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span className="ml-3 text-sm font-medium text-gray-700">Enable Auto-Apply</span>
+                </label>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setOpenFiltersDialog(true)}
+                  className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
+                >
+                  <CogIcon className="h-4 w-4 mr-2" />
+                  Configure Filters
+                </button>
                 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={integration.auto_apply_enabled}
-                      onChange={(e) => handleAutoApplyToggle(e.target.checked)}
-                    />
-                  }
-                  label="Enable Auto-Apply"
-                  sx={{ mb: 2 }}
-                />
-                
-                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Settings />}
-                    onClick={() => setOpenFiltersDialog(true)}
-                  >
-                    Configure Filters
-                  </Button>
-                  
-                  <Button
-                    variant="contained"
-                    startIcon={<PlayArrow />}
-                    onClick={handleTriggerAutoApply}
-                    disabled={!integration.auto_apply_enabled || loading}
-                  >
-                    Trigger Now
-                  </Button>
-                </Box>
-                
-                {Object.keys(autoApplyFilters).length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Active Filters:
-                    </Typography>
+                <button
+                  onClick={handleTriggerAutoApply}
+                  disabled={!integration.auto_apply_enabled || loading}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center transition-colors"
+                >
+                  <PlayIcon className="h-4 w-4 mr-2" />
+                  Trigger Now
+                </button>
+              </div>
+              
+              {Object.keys(autoApplyFilters).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Active Filters:</h4>
+                  <div className="flex flex-wrap gap-2">
                     {Object.entries(autoApplyFilters).map(([key, value]) => (
                       value && (
-                        <Chip
+                        <span
                           key={key}
-                          label={`${key}: ${value}`}
-                          size="small"
-                          sx={{ mr: 0.5, mb: 0.5 }}
-                        />
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {key}: {value}
+                        </span>
                       )
                     ))}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
+      </div>
 
-        {/* Dashboard Stats */}
-        {stats && (
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  <Timeline sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Dashboard Statistics
-                </Typography>
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={6} sm={3}>
-                    <Box textAlign="center">
-                      <Typography variant="h4" color="primary">
-                        {stats.emails_sent_today}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Emails Today
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={6} sm={3}>
-                    <Box textAlign="center">
-                      <Typography variant="h4" color="primary">
-                        {stats.emails_sent_this_week}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Emails This Week
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={6} sm={3}>
-                    <Box textAlign="center">
-                      <Typography variant="h4" color="success.main">
-                        {stats.responses_received}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Responses
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  
-                  <Grid item xs={6} sm={3}>
-                    <Box textAlign="center">
-                      <Typography variant="h4" color="warning.main">
-                        {stats.unprocessed_responses}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Unprocessed
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                <Typography variant="subtitle2" gutterBottom>
-                  Daily Quota Usage
-                </Typography>
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="body2">
-                    Emails: {stats.quota_usage.emails_sent} / {stats.quota_usage.max_emails}
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={stats.quota_usage.email_percentage}
-                    color={stats.quota_usage.email_percentage > 80 ? 'warning' : 'primary'}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
-
-        {/* Recent Emails */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  <Email sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Recent Emails
-                </Typography>
-                <Button size="small" onClick={loadEmails}>
-                  <Refresh />
-                </Button>
-              </Box>
+      {/* Dashboard Stats */}
+      {stats && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <ChartBarIcon className="h-5 w-5 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Dashboard Statistics</h3>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{stats.emails_sent_today}</div>
+                <div className="text-sm text-gray-600">Emails Today</div>
+              </div>
               
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Job</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Sent</TableCell>
-                      <TableCell>Responses</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {emails.map((email) => (
-                      <TableRow key={email.id}>
-                        <TableCell>
-                          <Typography variant="body2" noWrap>
-                            {email.job_title}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {email.job_company}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={email.status}
-                            size="small"
-                            color={email.status === 'replied' ? 'success' : 'default'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption">
-                            {format(new Date(email.sent_at), 'MMM d')}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {email.response_count > 0 ? (
-                            <Chip label={email.response_count} size="small" color="success" />
-                          ) : (
-                            <Typography variant="caption" color="text.secondary">
-                              None
-                            </Typography>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{stats.emails_sent_this_week}</div>
+                <div className="text-sm text-gray-600">Emails This Week</div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">{stats.responses_received}</div>
+                <div className="text-sm text-gray-600">Total Responses</div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-3xl font-bold text-yellow-600">{stats.unprocessed_responses}</div>
+                <div className="text-sm text-gray-600">Unprocessed</div>
+              </div>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Daily Quota Usage</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Emails: {stats.quota_usage.emails_sent} / {stats.quota_usage.max_emails}</span>
+                  <span>{stats.quota_usage.email_percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${
+                      stats.quota_usage.email_percentage > 80 ? 'bg-yellow-600' : 'bg-blue-600'
+                    }`}
+                    style={{ width: `${stats.quota_usage.email_percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Emails */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <EnvelopeIcon className="h-5 w-5 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Recent Emails</h3>
+              </div>
+              <button
+                onClick={loadEmails}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <ArrowPathIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {emails.length > 0 ? (
+              emails.map((email) => (
+                <div key={email.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">{email.job_title}</h4>
+                      <p className="text-sm text-gray-600">{email.job_company}</p>
+                      <p className="text-xs text-gray-500">{format(new Date(email.sent_at), 'MMM d')}</p>
+                    </div>
+                    <div className="flex flex-col items-end space-y-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEmailStatusColor(email.status)}`}>
+                        {email.status}
+                      </span>
+                      {email.response_count > 0 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {email.response_count} replies
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500">No replies</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-12 text-center text-gray-500">
+                <EnvelopeIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium text-gray-900 mb-2">No emails found</p>
+                <p className="text-sm">Your sent job applications will appear here.</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         {/* Recent Responses */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">
-                  <Reply sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Recent Responses
-                </Typography>
-                <Button size="small" onClick={handleCheckResponses} disabled={loading}>
-                  <Refresh />
-                </Button>
-              </Box>
-              
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Job</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>From</TableCell>
-                      <TableCell>Received</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {responses.map((response) => (
-                      <TableRow key={response.id}>
-                        <TableCell>
-                          <Typography variant="body2" noWrap>
-                            {response.job_title}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {response.job_company}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={response.response_type.replace('_', ' ')}
-                            size="small"
-                            color={getResponseTypeColor(response.response_type)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption">
-                            {response.from_email.split('@')[0]}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption">
-                            {format(new Date(response.received_at), 'MMM d')}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <ChatBubbleLeftRightIcon className="h-5 w-5 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Recent Responses</h3>
+              </div>
+              <button
+                onClick={handleCheckResponses}
+                disabled={loading}
+                className="text-gray-500 hover:text-gray-700 disabled:text-gray-400 transition-colors"
+              >
+                <ArrowPathIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {responses.length > 0 ? (
+              responses.map((response) => (
+                <div key={response.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">{response.job_title}</h4>
+                      <p className="text-sm text-gray-600">{response.job_company}</p>
+                      <p className="text-xs text-gray-500">From: {response.from_email.split('@')[0]}</p>
+                      <p className="text-xs text-gray-500">{format(new Date(response.received_at), 'MMM d')}</p>
+                    </div>
+                    <div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResponseTypeColor(response.response_type)}`}>
+                        {response.response_type.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-12 text-center text-gray-500">
+                <ChatBubbleLeftRightIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium text-gray-900 mb-2">No responses found</p>
+                <p className="text-sm">Employer responses will appear here.</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
 
       {/* Filters Dialog */}
-      <Dialog open={openFiltersDialog} onClose={() => setOpenFiltersDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Configure Auto-Apply Filters</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Keywords"
-                value={autoApplyFilters.keywords || ''}
-                onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, keywords: e.target.value }))}
-                placeholder="e.g., software engineer, developer"
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Location"
-                value={autoApplyFilters.location || ''}
-                onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="e.g., San Francisco, Remote"
-              />
-            </Grid>
-            
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Job Type</InputLabel>
-                <Select
-                  value={autoApplyFilters.job_type || ''}
-                  onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, job_type: e.target.value }))}
+      {openFiltersDialog && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-lg border border-gray-200 w-full max-w-md mx-4"
+          >
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Configure Auto-Apply Filters</h3>
+                <button
+                  onClick={() => setOpenFiltersDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <MenuItem value="">Any</MenuItem>
-                  <MenuItem value="full_time">Full Time</MenuItem>
-                  <MenuItem value="part_time">Part Time</MenuItem>
-                  <MenuItem value="contract">Contract</MenuItem>
-                  <MenuItem value="remote">Remote</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Experience Level</InputLabel>
-                <Select
-                  value={autoApplyFilters.experience_level || ''}
-                  onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, experience_level: e.target.value }))}
-                >
-                  <MenuItem value="">Any</MenuItem>
-                  <MenuItem value="entry">Entry Level</MenuItem>
-                  <MenuItem value="mid">Mid Level</MenuItem>
-                  <MenuItem value="senior">Senior Level</MenuItem>
-                  <MenuItem value="executive">Executive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Minimum Salary"
-                type="number"
-                value={autoApplyFilters.salary_min || ''}
-                onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, salary_min: e.target.value }))}
-                placeholder="e.g., 80000"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenFiltersDialog(false)}>Cancel</Button>
-          <Button onClick={handleUpdateFilters} variant="contained">Save Filters</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
+                <input
+                  type="text"
+                  value={autoApplyFilters.keywords || ''}
+                  onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, keywords: e.target.value }))}
+                  placeholder="e.g., software engineer, developer"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  value={autoApplyFilters.location || ''}
+                  onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="e.g., San Francisco, Remote"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                  <select
+                    value={autoApplyFilters.job_type || ''}
+                    onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, job_type: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Any</option>
+                    <option value="full_time">Full Time</option>
+                    <option value="part_time">Part Time</option>
+                    <option value="contract">Contract</option>
+                    <option value="remote">Remote</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+                  <select
+                    value={autoApplyFilters.experience_level || ''}
+                    onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, experience_level: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Any</option>
+                    <option value="entry">Entry Level</option>
+                    <option value="mid">Mid Level</option>
+                    <option value="senior">Senior Level</option>
+                    <option value="executive">Executive</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Salary</label>
+                <input
+                  type="number"
+                  value={autoApplyFilters.salary_min || ''}
+                  onChange={(e) => setAutoApplyFilters(prev => ({ ...prev, salary_min: e.target.value }))}
+                  placeholder="e.g., 80000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setOpenFiltersDialog(false)}
+                className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateFilters}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Save Filters
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
   );
 };
 

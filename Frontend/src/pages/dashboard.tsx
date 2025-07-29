@@ -54,6 +54,7 @@ interface SavedJob {
   };
   salary_min?: number;
   salary_max?: number;
+  salary_display?: string;
   job_type: string;
   created_at: string;
 }
@@ -79,6 +80,18 @@ const DashboardPage: React.FC = () => {
     if (isAuthenticated) {
       fetchDashboardData();
     }
+  }, [isAuthenticated]);
+
+  // Refresh data when window gains focus (user comes back to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isAuthenticated) {
+        fetchDashboardData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [isAuthenticated]);
 
   const fetchDashboardData = async () => {
@@ -210,6 +223,7 @@ const DashboardPage: React.FC = () => {
           location: { name: savedJob.job?.location?.name || 'Unknown Location' },
           salary_min: savedJob.job?.salary_min,
           salary_max: savedJob.job?.salary_max,
+          salary_display: savedJob.job?.salary_display,
           job_type: savedJob.job?.job_type || 'full_time',
           created_at: savedJob.job?.created_at || savedJob.created_at
         };
@@ -282,12 +296,23 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  const formatSalary = (min?: number, max?: number) => {
-    if (!min && !max) return 'Salary not specified';
-    if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
-    if (min) return `$${min.toLocaleString()}+`;
-    if (max) return `Up to $${max.toLocaleString()}`;
+  const formatSalary = (job: SavedJob) => {
+    // Use the backend's formatted salary_display if available
+    if (job.salary_display) {
+      return job.salary_display;
+    }
+    
+    // Fallback to manual formatting if salary_display is not available
+    if (!job.salary_min && !job.salary_max) return 'Salary not specified';
+    if (job.salary_min && job.salary_max) return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
+    if (job.salary_min) return `$${job.salary_min.toLocaleString()}+`;
+    if (job.salary_max) return `Up to $${job.salary_max.toLocaleString()}`;
     return 'Salary not specified';
+  };
+
+  const handleApplyToSavedJob = (job: SavedJob) => {
+    // Navigate to the job details page where they can apply
+    router.push(`/jobs/${job.id}`);
   };
 
   if (!isAuthenticated) {
@@ -328,27 +353,38 @@ const DashboardPage: React.FC = () => {
         {/* Header */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-2">Welcome back, {user?.first_name || user?.email}</p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <ChartBarIcon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                  </div>
+                  <p className="text-gray-600">Welcome back, {user?.first_name || user?.email}</p>
+                </div>
+                <div className="flex space-x-3">
+                  <GoogleIntegrationButton />
+                  <button
+                    onClick={() => router.push('/jobs')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Browse Jobs
+                  </button>
+                  <button
+                    onClick={() => router.push('/profile')}
+                    className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
               </div>
-              <div className="flex space-x-3">
-                <GoogleIntegrationButton />
-                <button
-                  onClick={() => router.push('/jobs')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                >
-                  Browse Jobs
-                </button>
-                <button
-                  onClick={() => router.push('/profile')}
-                  className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium"
-                >
-                  Edit Profile
-                </button>
-              </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -360,13 +396,12 @@ const DashboardPage: React.FC = () => {
                 { id: 'overview', name: 'Overview', icon: ChartBarIcon },
                 { id: 'applications', name: 'Applications', icon: DocumentTextIcon },
                 { id: 'saved', name: 'Saved Jobs', icon: HeartIcon },
-                { id: 'subscription', name: 'Subscription', icon: CogIcon },
-                { id: 'profile', name: 'Profile', icon: UserIcon }
+                { id: 'subscription', name: 'Subscription', icon: CogIcon }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -390,11 +425,11 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                 >
                   <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+                    <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                      <DocumentTextIcon className="h-6 w-6 text-blue-600" />
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total Applications</p>
@@ -407,11 +442,11 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                 >
                   <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <ClockIcon className="h-8 w-8 text-yellow-600" />
+                    <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-lg">
+                      <ClockIcon className="h-6 w-6 text-yellow-600" />
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Pending</p>
@@ -424,11 +459,11 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                 >
                   <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <CheckCircleIcon className="h-8 w-8 text-green-600" />
+                    <div className="flex-shrink-0 p-2 bg-green-100 rounded-lg">
+                      <CheckCircleIcon className="h-6 w-6 text-green-600" />
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Accepted</p>
@@ -441,11 +476,11 @@ const DashboardPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.3 }}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                 >
                   <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <EyeIcon className="h-8 w-8 text-purple-600" />
+                    <div className="flex-shrink-0 p-2 bg-purple-100 rounded-lg">
+                      <EyeIcon className="h-6 w-6 text-purple-600" />
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Profile Views</p>
@@ -460,14 +495,19 @@ const DashboardPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="bg-white rounded-lg shadow-sm border border-gray-200"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
               >
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Recent Applications</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <DocumentTextIcon className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">Recent Applications</h3>
+                  </div>
                 </div>
                 <div className="divide-y divide-gray-200">
                   {recentApplications.map((application) => (
-                    <div key={application.id} className="px-6 py-4">
+                    <div key={application.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900">{application.job.title}</h4>
@@ -484,10 +524,10 @@ const DashboardPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-                <div className="px-6 py-4 border-t border-gray-200">
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                   <button
                     onClick={() => setActiveTab('applications')}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
                   >
                     View all applications →
                   </button>
@@ -499,14 +539,19 @@ const DashboardPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white rounded-lg shadow-sm border border-gray-200"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
               >
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Saved Jobs</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <HeartIcon className="h-5 w-5 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">Saved Jobs</h3>
+                  </div>
                 </div>
                 <div className="divide-y divide-gray-200">
                   {savedJobs.map((job) => (
-                    <div key={job.id} className="px-6 py-4">
+                    <div key={job.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900">{job.title}</h4>
@@ -521,21 +566,24 @@ const DashboardPage: React.FC = () => {
                             </div>
                             <div className="flex items-center text-sm text-gray-600">
                               <CurrencyDollarIcon className="h-4 w-4 mr-1" />
-                              {formatSalary(job.salary_min, job.salary_max)}
+                              {formatSalary(job)}
                             </div>
                           </div>
                         </div>
-                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        <button 
+                          onClick={() => handleApplyToSavedJob(job)}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+                        >
                           Apply
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="px-6 py-4 border-t border-gray-200">
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                   <button
                     onClick={() => setActiveTab('saved')}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
                   >
                     View all saved jobs →
                   </button>
@@ -547,14 +595,19 @@ const DashboardPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="bg-white rounded-lg shadow-sm border border-gray-200"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
               >
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Subscription Status</h3>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <CogIcon className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">Subscription Status</h3>
+                    </div>
                     <button
                       onClick={() => setActiveTab('subscription')}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
                     >
                       View details →
                     </button>
@@ -568,17 +621,27 @@ const DashboardPage: React.FC = () => {
           )}
 
           {activeTab === 'applications' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+            >
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">All Applications</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <DocumentTextIcon className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">All Applications</h3>
+                  </div>
                   <span className="text-sm text-gray-500">{allApplications.length} application{allApplications.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
               <div className="divide-y divide-gray-200">
                 {allApplications.length > 0 ? (
                   allApplications.map((application) => (
-                    <div key={application.id} className="px-6 py-4">
+                    <div key={application.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900">{application.job.title}</h4>
@@ -595,28 +658,38 @@ const DashboardPage: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 text-center text-gray-500">
+                  <div className="p-12 text-center text-gray-500">
                     <DocumentTextIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>No applications found.</p>
-                    <p className="text-sm mt-2">Start applying to jobs to see your applications here.</p>
+                    <p className="text-lg font-medium text-gray-900 mb-2">No applications found</p>
+                    <p className="text-sm">Start applying to jobs to see your applications here.</p>
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === 'saved' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+            >
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Saved Jobs</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <HeartIcon className="h-5 w-5 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">Saved Jobs</h3>
+                  </div>
                   <span className="text-sm text-gray-500">{savedJobs.length} job{savedJobs.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
               <div className="divide-y divide-gray-200">
                 {savedJobs.length > 0 ? (
                   savedJobs.map((job) => (
-                    <div key={job.id} className="px-6 py-4">
+                    <div key={job.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900">{job.title}</h4>
@@ -631,35 +704,48 @@ const DashboardPage: React.FC = () => {
                             </div>
                             <div className="flex items-center text-sm text-gray-600">
                               <CurrencyDollarIcon className="h-4 w-4 mr-1" />
-                              {formatSalary(job.salary_min, job.salary_max)}
+                              {formatSalary(job)}
                             </div>
                           </div>
                         </div>
-                        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        <button 
+                          onClick={() => handleApplyToSavedJob(job)}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+                        >
                           Apply
                         </button>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 text-center text-gray-500">
+                  <div className="p-12 text-center text-gray-500">
                     <HeartIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>No saved jobs found.</p>
-                    <p className="text-sm mt-2">Save jobs you're interested in to see them here.</p>
+                    <p className="text-lg font-medium text-gray-900 mb-2">No saved jobs found</p>
+                    <p className="text-sm">Save jobs you're interested in to see them here.</p>
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === 'subscription' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+            >
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Subscription & Usage</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <CogIcon className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">Subscription & Usage</h3>
+                  </div>
                   <button
                     onClick={() => router.push('/subscription')}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
                   >
                     Manage Subscription →
                   </button>
@@ -668,21 +754,8 @@ const DashboardPage: React.FC = () => {
               <div className="p-6">
                 <SubscriptionStatus />
               </div>
-            </div>
+            </motion.div>
           )}
-
-          {activeTab === 'profile' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Profile</h3>
-              </div>
-              <div className="p-6 text-center text-gray-500">
-                <UserIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p>Profile management coming soon...</p>
-              </div>
-            </div>
-          )}
-
 
         </div>
       </div>

@@ -658,93 +658,170 @@ const AdminUsersPage: React.FC = () => {
                     </div>
                   )}
 
-          {/* Users Table */}
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          {/* Users Table - Desktop */}
+          <div className="hidden lg:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <UserIcon className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.first_name} {user.last_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUserTypeColor(user.user_type)}`}>
+                          {user.user_type.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.is_active, user.is_verified)}`}>
+                          {getStatusIcon(user.is_active, user.is_verified)}
+                          <span className="ml-1">{getStatusText(user.is_active, user.is_verified)}</span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(user.date_joined)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleViewUser(user)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="View Details"
+                          >
+                            <EyeIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditUser(user)}
+                            className="text-green-600 hover:text-green-900"
+                            title="Edit User"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            className={`${user.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                            title={user.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {user.is_active ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => handleToggleVerified(user)}
+                            className={`${user.is_verified ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
+                            title={user.is_verified ? 'Unverify' : 'Verify'}
+                          >
+                            <ShieldCheckIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete User"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                          <UserIcon className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {user.first_name} {user.last_name}
-                              </div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUserTypeColor(user.user_type)}`}>
-                        {user.user_type.replace('_', ' ').toUpperCase()}
-                      </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.is_active, user.is_verified)}`}>
-                        {getStatusIcon(user.is_active, user.is_verified)}
-                        <span className="ml-1">{getStatusText(user.is_active, user.is_verified)}</span>
-                      </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.date_joined)}
-                        </td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                       <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleViewUser(user)}
-                              className="text-blue-600 hover:text-blue-900"
-                           title="View Details"
-                            >
-                              <EyeIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleEditUser(user)}
-                              className="text-green-600 hover:text-green-900"
-                           title="Edit User"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                           onClick={() => handleToggleActive(user)}
-                           className={`${user.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
-                           title={user.is_active ? 'Deactivate' : 'Activate'}
-                            >
-                           {user.is_active ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
-                            </button>
-                            <button
-                           onClick={() => handleToggleVerified(user)}
-                           className={`${user.is_verified ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
-                           title={user.is_verified ? 'Unverify' : 'Verify'}
-                            >
-                           <ShieldCheckIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user)}
-                              className="text-red-600 hover:text-red-900"
-                           title="Delete User"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Users Cards - Mobile & Tablet */}
+          <div className="lg:hidden space-y-4">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {user.first_name} {user.last_name}
+                      </h3>
+                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getUserTypeColor(user.user_type)}`}>
+                          {user.user_type.replace('_', ' ').toUpperCase()}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.is_active, user.is_verified)}`}>
+                          {getStatusIcon(user.is_active, user.is_verified)}
+                          <span className="ml-1">{getStatusText(user.is_active, user.is_verified)}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action Menu */}
+                  <div className="flex items-center space-x-1 ml-2">
+                    <button
+                      onClick={() => handleViewUser(user)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Details"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleEditUser(user)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Edit User"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(user)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        user.is_active 
+                          ? 'text-red-600 hover:bg-red-50' 
+                          : 'text-green-600 hover:bg-green-50'
+                      }`}
+                      title={user.is_active ? 'Deactivate' : 'Activate'}
+                    >
+                      {user.is_active ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete User"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+                
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between items-center text-xs text-gray-500">
+                    <span>Joined: {formatDate(user.date_joined)}</span>
+                    {user.last_login && (
+                      <span>Last login: {formatDate(user.last_login)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* User Details Modal */}
         {showUserModal && selectedUser && (

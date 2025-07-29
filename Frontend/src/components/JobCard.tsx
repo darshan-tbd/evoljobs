@@ -122,12 +122,18 @@ const JobCard: React.FC<JobCardProps> = memo(({
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  const formatSalary = (min?: number, max?: number) => {
-    if (!min && !max) return null;
-    if (min && max && min !== max) {
-      return `$${(min / 1000).toFixed(0)}K - $${(max / 1000).toFixed(0)}K`;
+  const formatSalary = () => {
+    // Use the backend's formatted salary_display if available
+    if (job.salary_display) {
+      return job.salary_display;
     }
-    return `$${((min || max)! / 1000).toFixed(0)}K`;
+    
+    // Fallback to manual formatting if salary_display is not available
+    if (!job.salary_min && !job.salary_max) return null;
+    if (job.salary_min && job.salary_max && job.salary_min !== job.salary_max) {
+      return `$${(job.salary_min / 1000).toFixed(0)}K - $${(job.salary_max / 1000).toFixed(0)}K`;
+    }
+    return `$${((job.salary_min || job.salary_max)! / 1000).toFixed(0)}K`;
   };
 
   const getStatusChips = () => {

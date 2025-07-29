@@ -501,15 +501,17 @@ const AdminApplicationsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Applications Table */}
+                {/* Applications Table */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
               Applications ({filteredApplications.length})
             </h3>
           </div>
-          
-          <div className="overflow-x-auto">
+
+          {/* Applications Table - Desktop */}
+          <div className="hidden lg:block">
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -578,19 +580,21 @@ const AdminApplicationsPage: React.FC = () => {
                         <button
                           onClick={() => handleViewApplication(application)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="View Details"
                         >
                           <EyeIcon className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(application.id, 'shortlisted')}
                           className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                          title="Shortlist"
+                          title="Update Status"
                         >
-                          <StarIcon className="w-4 h-4" />
+                          <PencilIcon className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteApplication(application)}
                           className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Delete Application"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -601,6 +605,86 @@ const AdminApplicationsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Applications Cards - Mobile & Tablet */}
+        <div className="lg:hidden space-y-4">
+          {filteredApplications.map((application) => (
+            <div key={application.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3 flex-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold text-sm">
+                      {application.applicant_name?.[0] || 'A'}{application.applicant_name?.split(' ')[1]?.[0] || 'P'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {application.applicant_name || 'N/A'}
+                    </h3>
+                    <p className="text-sm text-gray-500 truncate">{application.applicant_email || 'N/A'}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}>
+                        {getStatusIcon(application.status)}
+                        <span className="ml-1 capitalize">{application.status}</span>
+                      </span>
+                      {application.is_external_application && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          External
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Menu */}
+                <div className="flex items-center space-x-1 ml-2">
+                  <button
+                    onClick={() => handleViewApplication(application)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="View Details"
+                  >
+                    <EyeIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleUpdateStatus(application.id, 'shortlisted')}
+                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    title="Update Status"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteApplication(application)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Application"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <BriefcaseIcon className="w-4 h-4 mr-2" />
+                    <span className="font-medium">{application.job_title || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <BuildingOfficeIcon className="w-4 h-4 mr-2" />
+                    <span>{application.job_company || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center">
+                      <CalendarIcon className="w-3 h-3 mr-1" />
+                      Applied: {new Date(application.applied_at).toLocaleDateString()}
+                    </div>
+                    <span>ID: {application.id}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
           
           {filteredApplications.length === 0 && (
             <div className="text-center py-12">

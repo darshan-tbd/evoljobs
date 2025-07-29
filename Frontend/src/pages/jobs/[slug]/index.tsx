@@ -55,6 +55,7 @@ interface Job {
   salary_max?: number;
   salary_currency?: string;
   salary_type?: string;
+  salary_display?: string;
   external_url?: string;
   required_skills?: Array<{ id: number; name: string }>;
   preferred_skills?: Array<{ id: number; name: string }>;
@@ -172,6 +173,12 @@ const JobDetailsPage: React.FC = () => {
   };
 
   const formatSalary = (job: Job) => {
+    // Use the backend's formatted salary_display if available
+    if (job.salary_display) {
+      return job.salary_display;
+    }
+    
+    // Fallback to manual formatting if salary_display is not available
     if (!job.salary_min && !job.salary_max) return 'Salary not specified';
     
     const currency = job.salary_currency || 'USD';
