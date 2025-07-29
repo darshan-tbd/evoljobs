@@ -8,7 +8,8 @@ from .views import (
     GoogleOAuthView, GoogleIntegrationViewSet, EmailActivityViewSet,
     AutoApplySessionViewSet, DashboardStatsView,
     AdminGoogleIntegrationViewSet, AdminEmailActivityViewSet,
-    AdminAutoApplySessionViewSet, AdminGoogleStatsView
+    AdminAutoApplySessionViewSet, AdminGoogleStatsView,
+    GoogleOAuthRegistrationView
 )
 
 app_name = 'google_integration'
@@ -28,6 +29,7 @@ admin_router.register(r'admin/sessions', AdminAutoApplySessionViewSet, basename=
 urlpatterns = [
     # OAuth flow endpoints
     path('oauth/authorize/', GoogleOAuthView.as_view(), name='oauth_authorize'),
+    path('oauth/authorize/registration/', GoogleOAuthRegistrationView.as_view(), name='oauth_authorize_registration'),
     path('oauth/callback/', GoogleOAuthView.as_view(), name='oauth_callback'),
     
     # Dashboard statistics

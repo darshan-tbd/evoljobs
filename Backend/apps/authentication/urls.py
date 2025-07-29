@@ -11,8 +11,13 @@ urlpatterns = [
     # Authentication endpoints
     path('register/', views.UserRegistrationView.as_view(), name='register'),
     path('login/', views.UserLoginView.as_view(), name='login'),
+    path('login/google/', views.GoogleAuthView.as_view(), name='google_auth'),
     path('logout/', views.UserLogoutView.as_view(), name='logout'),
     path('profile/', views.UserProfileView.as_view(), name='profile'),
+    
+    # Debug endpoints
+    path('debug/google-config/', views.debug_google_config, name='debug_google_config'),
+    path('debug/google-auth-url/', views.get_google_auth_url, name='get_google_auth_url'),
     
     # Password management
     path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),

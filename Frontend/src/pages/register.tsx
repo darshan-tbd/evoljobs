@@ -1,39 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { 
-  EyeIcon, 
+  BriefcaseIcon,
+  EyeIcon,
   EyeSlashIcon,
   EnvelopeIcon,
   LockClosedIcon,
   UserIcon,
-  BriefcaseIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  XMarkIcon
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import Layout from '@/components/layout/Layout';
-
-interface JobCategory {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  is_active: boolean;
-}
+import Link from 'next/link';
 
 const RegisterPage: React.FC = () => {
   const router = useRouter();
   const { register } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [categorySearch, setCategorySearch] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -41,23 +28,6 @@ const RegisterPage: React.FC = () => {
     password: '',
     confirmPassword: '',
   });
-
-  // Fetch job categories on component mount
-  useEffect(() => {
-    const fetchJobCategories = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/jobs/job-categories/`);
-        if (response.ok) {
-          const data = await response.json();
-          setJobCategories(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch job categories:', error);
-      }
-    };
-
-    fetchJobCategories();
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -67,38 +37,26 @@ const RegisterPage: React.FC = () => {
     }));
   };
 
-  const handleCategoryToggle = (categoryId: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
-  const removeCategory = (categoryId: string) => {
-    setSelectedCategories(prev => prev.filter(id => id !== categoryId));
-  };
-
-  const filteredCategories = jobCategories.filter(category =>
-    category.name.toLowerCase().includes(categorySearch.toLowerCase())
-  );
-
-  const getSelectedCategoryNames = () => {
-    return jobCategories
-      .filter(cat => selectedCategories.includes(cat.id))
-      .map(cat => cat.name);
+  const validateForm = () => {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
+    
+    if (!validateForm()) {
+      setError('Please fill in all fields and ensure passwords match.');
       return;
     }
+
+    setLoading(true);
+    setError('');
 
     try {
       await register({
@@ -106,9 +64,9 @@ const RegisterPage: React.FC = () => {
         last_name: formData.lastName,
         email: formData.email,
         password: formData.password,
-        preferred_job_categories: selectedCategories,
       });
-      router.push('/jobs');
+      // Redirect to dashboard after successful email registration
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -140,300 +98,219 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Create your account
+              Join JobPilot
             </h2>
             <p className="text-gray-600">
-              Join JobPilot and find your dream job
+              Create your account and discover your dream job
             </p>
           </div>
 
-          {/* Form */}
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 rounded-lg p-4"
-              >
-                <p className="text-red-600 text-sm">{error}</p>
-              </motion.div>
-            )}
+          {/* Registration Form */}
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-50 border border-red-200 rounded-lg p-4"
+                >
+                  <p className="text-red-600 text-sm">{error}</p>
+                </motion.div>
+              )}
 
-            <div className="space-y-4">
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                      First name
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <UserIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        autoComplete="given-name"
+                        required
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="First name"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Last name
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <UserIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        autoComplete="family-name"
+                        required
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="Last name"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First name
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email address
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-5 w-5 text-gray-400" />
+                      <EnvelopeIcon className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      autoComplete="given-name"
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
                       required
-                      value={formData.firstName}
+                      value={formData.email}
                       onChange={handleInputChange}
                       className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="First name"
+                      placeholder="Enter your email"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last name
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-5 w-5 text-gray-400" />
+                      <LockClosedIcon className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      autoComplete="family-name"
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
                       required
-                      value={formData.lastName}
+                      value={formData.password}
                       onChange={handleInputChange}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Last name"
+                      className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="Create a password"
                     />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      )}
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Email Field */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      required
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder="Confirm your password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      )}
+                    </button>
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="Enter your email"
-                  />
                 </div>
-              </div>
 
-              {/* Password Field */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <LockClosedIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="Create a password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
-                  </button>
-                </div>
-                
                 {/* Password Requirements */}
                 {formData.password && (
-                  <div className="mt-2 space-y-1">
-                    {passwordRequirements.map((req, index) => (
-                      <div key={index} className="flex items-center text-xs">
-                        <CheckIcon className={`h-3 w-3 mr-1 ${req.met ? 'text-green-500' : 'text-gray-300'}`} />
-                        <span className={req.met ? 'text-green-600' : 'text-gray-500'}>
-                          {req.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Confirm Password Field */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <LockClosedIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="Confirm your password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Job Categories Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Interests <span className="text-gray-500">(Optional)</span>
-                </label>
-                <p className="text-xs text-gray-500 mb-3">
-                  Select the types of jobs you're interested in to get personalized job recommendations.
-                </p>
-                
-                {/* Selected Categories Display */}
-                {selectedCategories.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {getSelectedCategoryNames().map((categoryName, index) => {
-                      const categoryId = selectedCategories[index];
-                      return (
-                        <span
-                          key={categoryId}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        >
-                          {categoryName}
-                          <button
-                            type="button"
-                            onClick={() => removeCategory(categoryId)}
-                            className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-600"
-                          >
-                            <XMarkIcon className="w-3 h-3" />
-                          </button>
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Category Dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                    className="w-full flex items-center justify-between px-3 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <span className="text-gray-500">
-                      {selectedCategories.length > 0 
-                        ? `${selectedCategories.length} categories selected`
-                        : 'Select job categories...'}
-                    </span>
-                    <ChevronDownIcon className={`w-5 h-5 text-gray-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {showCategoryDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
-                      {/* Search Box */}
-                      <div className="p-3 border-b border-gray-200">
-                        <input
-                          type="text"
-                          placeholder="Search categories..."
-                          value={categorySearch}
-                          onChange={(e) => setCategorySearch(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      {/* Categories List */}
-                      <div className="max-h-40 overflow-y-auto">
-                        {filteredCategories.length > 0 ? (
-                          filteredCategories.map((category) => (
-                            <button
-                              key={category.id}
-                              type="button"
-                              onClick={() => handleCategoryToggle(category.id)}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
-                                selectedCategories.includes(category.id) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                              }`}
-                            >
-                              <span>{category.name}</span>
-                              {selectedCategories.includes(category.id) && (
-                                <CheckIcon className="w-4 h-4 text-blue-600" />
-                              )}
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-3 py-2 text-sm text-gray-500">
-                            No categories found
-                          </div>
-                        )}
-                      </div>
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Password requirements:</p>
+                    <div className="space-y-1">
+                      {passwordRequirements.map((req, index) => (
+                        <div key={index} className="flex items-center text-sm">
+                          <CheckIcon
+                            className={`h-4 w-4 mr-2 ${
+                              req.met ? 'text-green-500' : 'text-gray-400'
+                            }`}
+                          />
+                          <span className={req.met ? 'text-green-700' : 'text-gray-600'}>
+                            {req.label}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Submit Button */}
-            <div>
               <button
                 type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                disabled={loading || !validateForm()}
+                className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating account...
-                  </div>
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Account...
+                  </>
                 ) : (
-                  'Create account'
+                  'Create Account'
                 )}
               </button>
-            </div>
+            </form>
+          </div>
 
-            {/* Links */}
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => router.push('/login')}
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
-                  Sign in
-                </button>
-              </p>
-            </div>
-          </form>
+          {/* Login Link */}
+          <div className="text-center">
+            <p className="text-gray-600">
+              Already have an account?{' '}
+              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                Sign in here
+              </Link>
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Have a Google account? Use{' '}
+              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                Google Login
+              </Link>{' '}
+              on the sign-in page for quick access
+            </p>
+          </div>
         </motion.div>
       </div>
     </Layout>
