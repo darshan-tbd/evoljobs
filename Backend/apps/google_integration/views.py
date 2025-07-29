@@ -3,13 +3,23 @@ Google Integration API views for JobPilot (EvolJobs.com)
 Handles Google OAuth flow, integration management, and auto-apply settings
 """
 
+import os
 import logging
+import uuid
+from datetime import datetime, timedelta
 from typing import Dict, Any
+
 from django.conf import settings
-from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
-from rest_framework import status, permissions
-from rest_framework.decorators import api_view, permission_classes, action
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Count, Q, Avg, Sum
+from django.http import JsonResponse
+from django.utils import timezone
+
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
@@ -19,18 +29,53 @@ from .models import (
     GoogleIntegration, EmailSentRecord, EmailResponse, 
     AutoApplySession, GoogleAPIQuota
 )
-from .services import GoogleOAuthService, GmailAPIService, AutoApplyService
 from .serializers import (
     GoogleIntegrationSerializer, EmailSentRecordSerializer,
     EmailResponseSerializer, AutoApplySessionSerializer,
-    AutoApplyConfigSerializer, AdminGoogleIntegrationSerializer,
-    AdminEmailSentRecordSerializer, AdminEmailResponseSerializer,
-    AdminAutoApplySessionSerializer
+    GoogleAPIQuotaSerializer, AutoApplyConfigSerializer,
+    AdminGoogleIntegrationSerializer, AdminEmailSentRecordSerializer,
+    AdminEmailResponseSerializer, AdminAutoApplySessionSerializer
 )
-from .tasks import trigger_auto_apply_for_user, check_email_responses_for_integration
+from .services import GoogleOAuthService, GmailAPIService
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+class GoogleOAuthRegistrationView(APIView):
+    """
+    Handle Google OAuth flow for registration (unauthenticated access)
+    """
+    permission_classes = [permissions.AllowAny]
+    
+    @extend_schema(
+        summary="Initiate Google OAuth flow for registration",
+        description="Get authorization URL to start Google OAuth process for new user registration",
+        responses={200: {"type": "object", "properties": {"authorization_url": {"type": "string"}}}}
+    )
+    def get(self, request):
+        """
+        Get Google OAuth authorization URL for registration
+        """
+        try:
+            oauth_service = GoogleOAuthService()
+            
+            # Generate a unique state parameter for security
+            state = f"registration:{str(uuid.uuid4())}"
+            
+            authorization_url = oauth_service.get_authorization_url_for_registration(state)
+            
+            return Response({
+                'authorization_url': authorization_url,
+                'message': 'Redirect user to this URL to complete Google authorization'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating OAuth URL for registration: {e}")
+            return Response(
+                {'error': 'Failed to generate authorization URL'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class GoogleOAuthView(APIView):

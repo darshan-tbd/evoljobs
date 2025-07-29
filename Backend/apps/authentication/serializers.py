@@ -113,8 +113,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     User registration serializer
     """
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password], required=False)
+    password_confirm = serializers.CharField(write_only=True, required=False)
     preferred_job_categories = serializers.PrimaryKeyRelatedField(
         many=True, 
         queryset=JobCategory.objects.filter(is_active=True),
@@ -129,9 +129,29 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'password', 'password_confirm', 'preferred_job_categories'
         ]
     
+    def __init__(self, *args, **kwargs):
+        self.require_password = kwargs.pop('require_password', True)
+        super().__init__(*args, **kwargs)
+        
+        # If passwords are required (normal registration), make them required
+        if self.require_password:
+            self.fields['password'].required = True
+            self.fields['password_confirm'].required = True
+    
     def validate(self, attrs):
-        if attrs['password'] != attrs['password_confirm']:
+        # Only validate password matching if passwords are provided
+        password = attrs.get('password')
+        password_confirm = attrs.get('password_confirm')
+        
+        if self.require_password:
+            if not password:
+                raise serializers.ValidationError("Password is required")
+            if not password_confirm:
+                raise serializers.ValidationError("Password confirmation is required")
+        
+        if password and password_confirm and password != password_confirm:
             raise serializers.ValidationError("Passwords don't match")
+        
         return attrs
     
     def create(self, validated_data):
@@ -141,14 +161,28 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Extract preferred job categories before creating user
         preferred_categories = validated_data.pop('preferred_job_categories', [])
         
+        # Extract password
+        password = validated_data.pop('password', None)
+        
         # Create user
-        user = User.objects.create_user(
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            user_type=validated_data.get('user_type', 'job_seeker'),
-            password=validated_data['password']
-        )
+        if password:
+            # Normal registration with password
+            user = User.objects.create_user(
+                email=validated_data['email'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                user_type=validated_data.get('user_type', 'job_seeker'),
+                password=password
+            )
+        else:
+            # Google OAuth registration without password
+            user = User.objects.create(
+                email=validated_data['email'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                user_type=validated_data.get('user_type', 'job_seeker'),
+                is_active=True
+            )
         
         # Set preferred job categories
         if preferred_categories:

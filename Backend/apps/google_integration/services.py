@@ -99,7 +99,103 @@ class GoogleOAuthService:
             logger.error(f"Error generating authorization URL: {e}")
             raise
     
-    def handle_oauth_callback(self, authorization_code: str, state: str, authenticated_user: User = None) -> GoogleIntegration:
+    def get_authorization_url_for_registration(self, state: str) -> str:
+        """
+        Generate authorization URL for OAuth flow during registration (no user required)
+        """
+        try:
+            flow = Flow.from_client_config(
+                client_config={
+                    "web": {
+                        "client_id": self.client_id,
+                        "client_secret": self.client_secret,
+                        "redirect_uris": [self.redirect_uri],
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token",
+                    }
+                },
+                scopes=self.SCOPES
+            )
+            flow.redirect_uri = self.redirect_uri
+            
+            authorization_url, _ = flow.authorization_url(
+                access_type='offline',
+                include_granted_scopes='true',
+                prompt='consent',  # Force consent to get refresh token
+                state=state,
+            )
+            
+            return authorization_url
+            
+        except Exception as e:
+            logger.error(f"Error generating authorization URL for registration: {e}")
+            raise
+    
+    def get_user_info_from_code(self, authorization_code: str, state: str) -> dict:
+        """
+        Get user info from Google using authorization code (for registration flow)
+        """
+        try:
+            logger.info(f"Starting OAuth token exchange for state: {state}")
+            logger.info(f"Using redirect URI: {self.redirect_uri}")
+            logger.info(f"Using client ID: {self.client_id[:10]}...")  # Log partial client ID for debugging
+            
+            # Exchange authorization code for tokens
+            flow = Flow.from_client_config(
+                client_config={
+                    "web": {
+                        "client_id": self.client_id,
+                        "client_secret": self.client_secret,
+                        "redirect_uris": [self.redirect_uri],
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token",
+                    }
+                },
+                scopes=self.SCOPES
+            )
+            flow.redirect_uri = self.redirect_uri
+            
+            logger.info("Attempting to fetch tokens from Google...")
+            
+            # Fetch tokens
+            flow.fetch_token(code=authorization_code)
+            credentials = flow.credentials
+            
+            logger.info(f"Successfully received tokens from Google")
+            logger.info(f"Access token present: {bool(credentials.token)}")
+            logger.info(f"Refresh token present: {bool(credentials.refresh_token)}")
+            
+            # Get user info from Google
+            user_info = self._get_google_user_info(credentials.token)
+            
+            if not user_info:
+                raise Exception("Failed to get user info from Google")
+            
+            logger.info(f"Successfully retrieved user info for: {user_info.get('email', 'unknown')}")
+            
+            # Return user info along with tokens for account creation
+            return {
+                'user_info': user_info,
+                'access_token': credentials.token,
+                'refresh_token': credentials.refresh_token,
+                'expires_at': credentials.expiry.isoformat() if credentials.expiry else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting user info from code: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            if hasattr(e, 'args') and e.args:
+                logger.error(f"Error details: {e.args}")
+            
+            # Re-raise with more specific error message
+            if "invalid_grant" in str(e).lower():
+                raise Exception("(invalid_grant) The authorization code is invalid, expired, or has already been used. Please try the OAuth flow again.")
+            elif "invalid_client" in str(e).lower():
+                raise Exception("(invalid_client) Google OAuth client configuration is invalid. Please check your client ID and secret.")
+            else:
+                raise Exception(f"Google OAuth error: {str(e)}")
+    
+    def handle_oauth_callback(self, authorization_code: str, state: str, authenticated_user: User = None, credentials = None) -> GoogleIntegration:
         """
         Handle OAuth callback and exchange code for tokens
         """
@@ -120,24 +216,28 @@ class GoogleOAuthService:
             else:
                 logger.info(f"Using authenticated user for OAuth callback: {user.email}")
             
-            # Exchange authorization code for tokens
-            flow = Flow.from_client_config(
-                client_config={
-                    "web": {
-                        "client_id": self.client_id,
-                        "client_secret": self.client_secret,
-                        "redirect_uris": [self.redirect_uri],
-                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                        "token_uri": "https://oauth2.googleapis.com/token",
-                    }
-                },
-                scopes=self.SCOPES
-            )
-            flow.redirect_uri = self.redirect_uri
-            
-            # Fetch tokens
-            flow.fetch_token(code=authorization_code)
-            credentials = flow.credentials
+            # Use provided credentials or exchange authorization code for tokens
+            if credentials:
+                logger.info("Using provided credentials (avoiding double authorization code usage)")
+            else:
+                # Exchange authorization code for tokens
+                flow = Flow.from_client_config(
+                    client_config={
+                        "web": {
+                            "client_id": self.client_id,
+                            "client_secret": self.client_secret,
+                            "redirect_uris": [self.redirect_uri],
+                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri": "https://oauth2.googleapis.com/token",
+                        }
+                    },
+                    scopes=self.SCOPES
+                )
+                flow.redirect_uri = self.redirect_uri
+                
+                # Fetch tokens
+                flow.fetch_token(code=authorization_code)
+                credentials = flow.credentials
             
             # Log token information for debugging
             logger.info(f"OAuth tokens received - Access token: {bool(credentials.token)}, Refresh token: {bool(credentials.refresh_token)}")
