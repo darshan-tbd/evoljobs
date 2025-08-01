@@ -330,15 +330,15 @@ const DashboardOverview: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircleIcon className="w-5 h-5 text-green-500" />;
+        return <CheckCircleIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-green-500" />;
       case 'warning':
-        return <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />;
+        return <ExclamationTriangleIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-yellow-500" />;
       case 'error':
-        return <XCircleIcon className="w-5 h-5 text-red-500" />;
+        return <XCircleIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-red-500" />;
       case 'info':
-        return <InformationCircleIcon className="w-5 h-5 text-blue-500" />;
+        return <InformationCircleIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-blue-500" />;
       default:
-        return <InformationCircleIcon className="w-5 h-5 text-gray-500" />;
+        return <InformationCircleIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-500" />;
     }
   };
 
@@ -407,88 +407,88 @@ const DashboardOverview: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5 lg:space-y-6 w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="text-gray-600 mt-2 text-lg">Welcome back! Here's what's happening with your platform.</p>
+      <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">Dashboard Overview</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base lg:text-lg">Welcome back! Here's what's happening with your platform.</p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl"
+          className="flex items-center justify-center px-4 py-2.5 sm:px-5 sm:py-3 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl text-sm lg:text-base flex-shrink-0 touch-manipulation w-full sm:w-auto"
         >
-          <ArrowPathIcon className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh Data
+          <ArrowPathIcon className={`w-4 h-4 lg:w-5 lg:h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          <span>Refresh Data</span>
         </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
         {/* Users Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Users</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.users.total || 0)}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Users</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">{formatNumber(stats?.users.total || 0)}</p>
             </div>
-            <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-              <UsersIcon className="w-8 h-8 text-white" />
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg ml-3 flex-shrink-0">
+              <UsersIcon className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="mt-6 flex items-center text-sm">
+          <div className="mt-3 flex items-center text-sm">
             <span className="text-green-600 font-semibold">+{stats?.users.new_today || 0}</span>
             <span className="text-gray-500 ml-2">new today</span>
           </div>
         </div>
 
         {/* Companies Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Companies</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.companies.total || 0)}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">{formatNumber(stats?.companies.total || 0)}</p>
             </div>
-            <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
-              <BuildingOfficeIcon className="w-8 h-8 text-white" />
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg ml-3 flex-shrink-0">
+              <BuildingOfficeIcon className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="mt-6 flex items-center text-sm">
+          <div className="mt-3 flex items-center text-sm">
             <span className="text-green-600 font-semibold">{stats?.companies.verified || 0}</span>
             <span className="text-gray-500 ml-2">verified</span>
           </div>
         </div>
 
         {/* Jobs Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Jobs</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.jobs.active || 0)}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Jobs</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">{formatNumber(stats?.jobs.active || 0)}</p>
             </div>
-            <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
-              <BriefcaseIcon className="w-8 h-8 text-white" />
+            <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg ml-3 flex-shrink-0">
+              <BriefcaseIcon className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="mt-6 flex items-center text-sm">
+          <div className="mt-3 flex items-center text-sm">
             <span className="text-green-600 font-semibold">+{stats?.jobs.new_today || 0}</span>
             <span className="text-gray-500 ml-2">new today</span>
           </div>
         </div>
 
         {/* Applications Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-5 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Applications</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.applications.total || 0)}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">{formatNumber(stats?.applications.total || 0)}</p>
             </div>
-            <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-              <DocumentTextIcon className="w-8 h-8 text-white" />
+            <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg ml-3 flex-shrink-0">
+              <DocumentTextIcon className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="mt-6 flex items-center text-sm">
+          <div className="mt-3 flex items-center text-sm">
             <span className="text-yellow-600 font-semibold">{stats?.applications.pending || 0}</span>
             <span className="text-gray-500 ml-2">pending</span>
           </div>
@@ -496,100 +496,105 @@ const DashboardOverview: React.FC = () => {
       </div>
 
       {/* Scraper Stats */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Job Scrapers Performance</h3>
+      <div className="bg-white rounded-md sm:rounded-lg lg:rounded-xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 mb-2 sm:mb-3 lg:mb-4">
+          <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 truncate">Job Scrapers Performance</h3>
           <button
             onClick={() => router.push('/admin_dashboard/scrapers')}
-            className="flex items-center px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            className="flex items-center justify-center px-2 py-1 sm:px-3 sm:py-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md sm:rounded-lg transition-colors text-xs sm:text-sm flex-shrink-0"
           >
-            <GlobeAltIcon className="w-5 h-5 mr-2" />
-            Manage Scrapers
+            <GlobeAltIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <span className="hidden sm:inline">Manage</span>
+            <span className="sm:hidden">Manage</span>
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-1.5 sm:gap-2 lg:gap-3">
           {/* Michael Page */}
-          <div className="flex items-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-            <div className="p-3 bg-blue-500 rounded-lg mr-4">
-              <BuildingOfficeIcon className="w-6 h-6 text-white" />
+          <div className="flex items-center p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-md sm:rounded-lg">
+            <div className="p-1 sm:p-1.5 bg-blue-500 rounded-md mr-2 flex-shrink-0">
+              <BuildingOfficeIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
             </div>
-            <div>
-              <h4 className="font-semibold text-blue-900">Michael Page</h4>
-              <p className="text-blue-700 text-sm">{formatNumber(stats?.scrapers.michael_page_jobs || 0)} jobs</p>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold text-blue-900 text-xs sm:text-sm truncate">Michael Page</h4>
+              <p className="text-blue-700 text-xs">{formatNumber(stats?.scrapers.michael_page_jobs || 0)} jobs</p>
             </div>
           </div>
 
           {/* Pro Bono */}
-          <div className="flex items-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
-            <div className="p-3 bg-green-500 rounded-lg mr-4">
-              <DocumentTextIcon className="w-6 h-6 text-white" />
+          <div className="flex items-center p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-md sm:rounded-lg">
+            <div className="p-1 sm:p-1.5 bg-green-500 rounded-md mr-2 flex-shrink-0">
+              <DocumentTextIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
             </div>
-            <div>
-              <h4 className="font-semibold text-green-900">Pro Bono Australia</h4>
-              <p className="text-green-700 text-sm">{formatNumber(stats?.scrapers.pro_bono_jobs || 0)} jobs</p>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold text-green-900 text-xs sm:text-sm truncate">Pro Bono Australia</h4>
+              <p className="text-green-700 text-xs">{formatNumber(stats?.scrapers.pro_bono_jobs || 0)} jobs</p>
             </div>
           </div>
 
           {/* ServiceSeeking */}
-          <div className="flex items-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
-            <div className="p-3 bg-orange-500 rounded-lg mr-4">
-              <BriefcaseIcon className="w-6 h-6 text-white" />
+          <div className="flex items-center p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-md sm:rounded-lg">
+            <div className="p-1 sm:p-1.5 bg-orange-500 rounded-md mr-2 flex-shrink-0">
+              <BriefcaseIcon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
             </div>
-            <div>
-              <h4 className="font-semibold text-orange-900">ServiceSeeking</h4>
-              <p className="text-orange-700 text-sm">{formatNumber(stats?.scrapers.service_seeking_jobs || 0)} jobs</p>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold text-orange-900 text-xs sm:text-sm truncate">ServiceSeeking</h4>
+              <p className="text-orange-700 text-xs">{formatNumber(stats?.scrapers.service_seeking_jobs || 0)} jobs</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-2 sm:mt-3 flex flex-col space-y-1 text-xs text-gray-600">
           <span>Total scraped jobs: {formatNumber(stats?.scrapers.total_jobs || 0)}</span>
           <span>Active scrapers: {stats?.scrapers.active_scrapers || 0}/{stats?.scrapers.total_scrapers || 0}</span>
         </div>
       </div>
 
       {/* Detailed Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
         {/* User Types Breakdown */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">User Distribution</h3>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-blue-500 rounded-full mr-4"></div>
-                <span className="text-gray-700 font-medium">Job Seekers</span>
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+          <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6">User Distribution</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center min-w-0 flex-1">
+                <div className="w-3 h-3 bg-blue-500 rounded-full mr-3 flex-shrink-0"></div>
+                <span className="text-gray-700 font-medium text-sm sm:text-base truncate">Job Seekers</span>
               </div>
-              <span className="font-bold text-lg text-gray-900">{stats?.users.types.job_seekers || 0}</span>
+              <span className="font-bold text-sm sm:text-base text-gray-900 flex-shrink-0">{stats?.users.types.job_seekers || 0}</span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-purple-500 rounded-full mr-4"></div>
-                <span className="text-gray-700 font-medium">Employers</span>
+            <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center min-w-0 flex-1">
+                <div className="w-3 h-3 bg-purple-500 rounded-full mr-3 flex-shrink-0"></div>
+                <span className="text-gray-700 font-medium text-sm sm:text-base truncate">Employers</span>
               </div>
-              <span className="font-bold text-lg text-gray-900">{stats?.users.types.employers || 0}</span>
+              <span className="font-bold text-sm sm:text-base text-gray-900 flex-shrink-0">{stats?.users.types.employers || 0}</span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-4"></div>
-                <span className="text-gray-700 font-medium">Admins</span>
+            <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center min-w-0 flex-1">
+                <div className="w-3 h-3 bg-green-500 rounded-full mr-3 flex-shrink-0"></div>
+                <span className="text-gray-700 font-medium text-sm sm:text-base truncate">Admins</span>
               </div>
-              <span className="font-bold text-lg text-gray-900">{stats?.users.types.admins || 0}</span>
+              <span className="font-bold text-sm sm:text-base text-gray-900 flex-shrink-0">{stats?.users.types.admins || 0}</span>
             </div>
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Recent Activity</h3>
-          <div className="space-y-4">
-            {recentActivity.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                {getStatusIcon(activity.status)}
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+          <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6">Recent Activity</h3>
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            {recentActivity.slice(0, 4).map((activity) => (
+              <div key={activity.id} className="flex items-start space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5">
+                    {getStatusIcon(activity.status)}
+                  </div>
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">{activity.title}</p>
-                  <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">{activity.title}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{activity.description}</p>
+                  <p className="text-xs text-gray-400 mt-1">
                     {formatDate(activity.timestamp)}
                   </p>
                 </div>
@@ -601,36 +606,38 @@ const DashboardOverview: React.FC = () => {
 
       {/* Recent Scraped Jobs */}
       {recentScrapedJobs.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Recent Scraped Jobs</h3>
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 mb-3 sm:mb-4 lg:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate">Recent Scraped Jobs</h3>
             <button
               onClick={() => router.push('/admin_dashboard/scrapers')}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium self-start sm:self-auto flex-shrink-0"
             >
               View All →
             </button>
           </div>
-          <div className="overflow-x-auto">
+          
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scraped</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scraped</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {recentScrapedJobs.slice(0, 5).map((job) => (
                   <tr key={job.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{job.title}</div>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 truncate max-w-48">{job.title}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{job.company}</div>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 truncate max-w-32">{job.company}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         job.external_source === 'Michael Page' ? 'bg-blue-100 text-blue-800' :
                         job.external_source === 'Pro Bono Australia' ? 'bg-green-100 text-green-800' :
@@ -639,7 +646,7 @@ const DashboardOverview: React.FC = () => {
                         {job.external_source}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(job.created_at)}
                     </td>
                   </tr>
@@ -647,47 +654,69 @@ const DashboardOverview: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {recentScrapedJobs.slice(0, 4).map((job) => (
+              <div key={job.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="text-sm font-medium text-gray-900 flex-1 mr-3 line-clamp-2">{job.title}</h4>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
+                    job.external_source === 'Michael Page' ? 'bg-blue-100 text-blue-800' :
+                    job.external_source === 'Pro Bono Australia' ? 'bg-green-100 text-green-800' :
+                    'bg-orange-100 text-orange-800'
+                  }`}>
+                    {job.external_source}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <span className="truncate flex-1 mr-3">{job.company}</span>
+                  <span className="flex-shrink-0">{formatDate(job.created_at)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+        <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6">Quick Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
           <button
             onClick={() => router.push('/admin_dashboard/users')}
-            className="flex items-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl hover:from-blue-100 hover:to-blue-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+            className="flex items-center p-3 sm:p-4 lg:p-5 xl:p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg sm:rounded-xl lg:rounded-2xl hover:from-blue-100 hover:to-blue-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
           >
-            <UsersIcon className="w-6 h-6 text-blue-600 mr-4" />
-            <span className="text-blue-900 font-semibold">Manage Users</span>
+            <UsersIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-600 mr-2 sm:mr-3 lg:mr-4 flex-shrink-0" />
+            <span className="text-blue-900 font-semibold text-xs sm:text-sm lg:text-base truncate">Manage Users</span>
           </button>
           <button
             onClick={() => router.push('/admin_dashboard/companies')}
-            className="flex items-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl hover:from-purple-100 hover:to-purple-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+            className="flex items-center p-3 sm:p-4 lg:p-5 xl:p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg sm:rounded-xl lg:rounded-2xl hover:from-purple-100 hover:to-purple-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
           >
-            <BuildingOfficeIcon className="w-6 h-6 text-purple-600 mr-4" />
-            <span className="text-purple-900 font-semibold">Manage Companies</span>
+            <BuildingOfficeIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-purple-600 mr-2 sm:mr-3 lg:mr-4 flex-shrink-0" />
+            <span className="text-purple-900 font-semibold text-xs sm:text-sm lg:text-base truncate">Manage Companies</span>
           </button>
           <button
             onClick={() => router.push('/admin_dashboard/jobs')}
-            className="flex items-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl hover:from-orange-100 hover:to-orange-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+            className="flex items-center p-3 sm:p-4 lg:p-5 xl:p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg sm:rounded-xl lg:rounded-2xl hover:from-orange-100 hover:to-orange-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
           >
-            <BriefcaseIcon className="w-6 h-6 text-orange-600 mr-4" />
-            <span className="text-orange-900 font-semibold">Manage Jobs</span>
+            <BriefcaseIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-orange-600 mr-2 sm:mr-3 lg:mr-4 flex-shrink-0" />
+            <span className="text-orange-900 font-semibold text-xs sm:text-sm lg:text-base truncate">Manage Jobs</span>
           </button>
           <button
             onClick={() => router.push('/admin_dashboard/scrapers')}
-            className="flex items-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl hover:from-green-100 hover:to-green-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+            className="flex items-center p-3 sm:p-4 lg:p-5 xl:p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg sm:rounded-xl lg:rounded-2xl hover:from-green-100 hover:to-green-200 transition-all duration-200 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
           >
-            <GlobeAltIcon className="w-6 h-6 text-green-600 mr-4" />
-            <span className="text-green-900 font-semibold">Manage Scrapers</span>
+            <GlobeAltIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-600 mr-2 sm:mr-3 lg:mr-4 flex-shrink-0" />
+            <span className="text-green-900 font-semibold text-xs sm:text-sm lg:text-base truncate">Manage Scrapers</span>
           </button>
         </div>
       </div>
 
       {/* Snackbar */}
       {snackbar.open && (
-        <div className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 bg-white rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
           snackbar.type === 'success' ? 'border-green-500' : 
           snackbar.type === 'error' ? 'border-red-500' : 
           snackbar.type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
@@ -708,7 +737,7 @@ const DashboardOverview: React.FC = () => {
                   <InformationCircleIcon className="w-6 h-6 text-blue-500" />
                 )}
               </div>
-              <div className="ml-3 flex-1">
+              <div className="ml-3 flex-1 min-w-0">
                 <p className={`text-sm font-medium ${
                   snackbar.type === 'success' ? 'text-green-800' : 
                   snackbar.type === 'error' ? 'text-red-800' : 
@@ -720,7 +749,7 @@ const DashboardOverview: React.FC = () => {
               <div className="ml-4 flex-shrink-0">
                 <button
                   onClick={() => setSnackbar({ ...snackbar, open: false })}
-                  className={`inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  className={`inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation ${
                     snackbar.type === 'success' ? 'text-green-500 hover:bg-green-100 focus:ring-green-500' : 
                     snackbar.type === 'error' ? 'text-red-500 hover:bg-red-100 focus:ring-red-500' : 
                     snackbar.type === 'warning' ? 'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-500' : 

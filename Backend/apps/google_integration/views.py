@@ -37,6 +37,7 @@ from .serializers import (
     AdminEmailResponseSerializer, AdminAutoApplySessionSerializer
 )
 from .services import GoogleOAuthService, GmailAPIService
+from .tasks import trigger_auto_apply_for_user
 
 User = get_user_model()
 logger = logging.getLogger(__name__)

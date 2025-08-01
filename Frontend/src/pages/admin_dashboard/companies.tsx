@@ -407,110 +407,112 @@ const AdminCompaniesPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-4 lg:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Company Management</h1>
-            <p className="text-gray-600 mt-2 text-lg">Manage and monitor all registered companies.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">Company Management</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">Manage and monitor all registered companies.</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
             <button
               onClick={handleRefresh}
-              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200"
+              className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm lg:text-base"
             >
-              <ArrowPathIcon className="w-5 h-5 mr-2" />
-              Refresh
+              <ArrowPathIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Refresh</span>
             </button>
             <button 
               onClick={handleAddCompany}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-xs sm:text-sm lg:text-base"
             >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add Company
+              <PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Add Company</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
 
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Companies</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.total_companies)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Companies</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.total_companies)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                  <BuildingOfficeIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <BuildingOfficeIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">+{stats.recent_activity.new_companies_today}</span>
-                <span className="text-gray-500 ml-2">new today</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">new today</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Verified</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.verified_companies)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Verified</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.verified_companies)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-                  <CheckCircleIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">
                   {stats.total_companies > 0 ? ((stats.verified_companies / stats.total_companies) * 100).toFixed(1) : '0.0'}%
                 </span>
-                <span className="text-gray-500 ml-2">verification rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">verification rate</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Featured</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.featured_companies)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Featured</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.featured_companies)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
-                  <GlobeAltIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <GlobeAltIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-purple-600 font-semibold">
                   {stats.total_companies > 0 ? ((stats.featured_companies / stats.total_companies) * 100).toFixed(1) : '0.0'}%
                 </span>
-                <span className="text-gray-500 ml-2">featured rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">featured rate</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">This Week</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.recent_activity.new_companies_this_week)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">This Week</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.recent_activity.new_companies_this_week)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
-                  <CalendarIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-orange-600 font-semibold">+{stats.recent_activity.new_companies_today}</span>
-                <span className="text-gray-500 ml-2">today</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">today</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="flex-1 max-w-md">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search companies..."

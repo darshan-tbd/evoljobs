@@ -220,32 +220,69 @@ const AdminAIPage: React.FC = () => {
     trend?: number;
     subtitle?: string;
   }> = ({ title, value, unit, icon, color, trend, subtitle }) => (
-    <Card>
-      <CardContent>
+    <Card sx={{ height: '100%' }}>
+      <CardContent sx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box>
-            <Typography color="textSecondary" gutterBottom variant="body2">
+          <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
+            <Typography 
+              color="textSecondary" 
+              gutterBottom 
+              variant="body2"
+              sx={{ 
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
               {title}
             </Typography>
-            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+            <Typography 
+              variant="h4" 
+              component="div" 
+              sx={{ 
+                fontWeight: 'bold',
+                fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2.125rem' },
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
               {value.toFixed(2)}{unit}
             </Typography>
             {subtitle && (
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                sx={{ 
+                  mt: { xs: 0.5, sm: 1 },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
                 {subtitle}
               </Typography>
             )}
             {trend !== undefined && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: { xs: 0.5, sm: 1 } }}>
                 {trend > 0 ? (
-                  <TrendingUp color="success" fontSize="small" />
+                  <TrendingUp color="success" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
                 ) : (
-                  <TrendingDown color="error" fontSize="small" />
+                  <TrendingDown color="error" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
                 )}
                 <Typography
                   variant="body2"
                   color={trend > 0 ? 'success.main' : 'error.main'}
-                  sx={{ ml: 0.5 }}
+                  sx={{ 
+                    ml: 0.5,
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
                   {Math.abs(trend)}% from last period
                 </Typography>
@@ -292,24 +329,49 @@ const AdminAIPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          mb: { xs: 2, sm: 3 },
+          gap: { xs: 2, sm: 0 }
+        }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="h4" gutterBottom sx={{ 
+              fontWeight: 'bold',
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
               AI & Machine Learning
             </Typography>
-            <Typography variant="body1" color="textSecondary">
+            <Typography variant="body1" color="textSecondary" sx={{
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}>
               Monitor and manage AI systems and recommendations
             </Typography>
           </Box>
-          <Stack direction="row" spacing={2}>
-            <FormControl sx={{ minWidth: 120 }}>
-              <InputLabel>Time Range</InputLabel>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={{ xs: 1, sm: 2 }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            <FormControl sx={{ minWidth: { xs: '100%', sm: 120 } }}>
+              <InputLabel sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>Time Range</InputLabel>
               <Select
                 value={timeRange}
                 label="Time Range"
                 onChange={(e) => setTimeRange(e.target.value)}
+                size={{ xs: 'small', sm: 'medium' }}
+                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
               >
                 <MenuItem value="1h">Last hour</MenuItem>
                 <MenuItem value="24h">Last 24 hours</MenuItem>
@@ -321,14 +383,17 @@ const AdminAIPage: React.FC = () => {
               startIcon={<Refresh />}
               onClick={fetchAIMetrics}
               variant="outlined"
+              size={{ xs: 'small', sm: 'medium' }}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             >
-              Refresh
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Refresh</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Refresh</Box>
             </Button>
           </Stack>
         </Box>
 
         {/* System Health Overview */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
               title="Active Models"

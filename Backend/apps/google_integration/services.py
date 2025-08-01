@@ -849,7 +849,7 @@ class AutoApplyService:
         """
         try:
             # Get user's subscription limits
-            subscription = self.subscription_service.get_active_subscription(
+            subscription = self.subscription_service.get_user_active_subscription(
                 self.integration.user
             )
             
@@ -863,7 +863,7 @@ class AutoApplyService:
                 max_applications = min(max_applications, subscription.plan.daily_application_limit)
             
             # Check daily usage
-            daily_usage = self.subscription_service.get_daily_usage(self.integration.user)
+            daily_usage = self.subscription_service.get_today_usage(self.integration.user)
             remaining_applications = daily_usage.get_remaining_applications(
                 subscription.plan.daily_application_limit
             )
