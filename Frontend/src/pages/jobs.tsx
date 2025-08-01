@@ -234,6 +234,8 @@ const JobsPage: React.FC = () => {
       params.append('ordering', sortOrder === 'desc' ? `-${sortBy}` : sortBy);
 
       console.log('Fetching jobs with params:', params.toString());
+      console.log('Search query:', debouncedSearchQuery);
+      console.log('API URL:', `/jobs/jobs/?${params.toString()}`);
       const response = await apiClient.get(`/jobs/jobs/?${params.toString()}`);
       console.log('Jobs response:', response.data);
       const data: JobsResponse = response.data;
@@ -390,9 +392,9 @@ const JobsPage: React.FC = () => {
                     <AdjustmentsHorizontalIcon className="h-6 w-6 text-gray-400 hover:text-blue-600 transition-colors" />
                   </button>
                 </div>
-                {searchQuery && (
+                {(searchQuery || debouncedSearchQuery) && (
                   <div className="mt-2 text-sm text-blue-100">
-                    {loading ? 'Searching...' : `Searching for "${searchQuery}"`}
+                    {loading ? 'Searching...' : `${jobs.length} jobs found${debouncedSearchQuery ? ` for "${debouncedSearchQuery}"` : ''}`}
                   </div>
                 )}
               </div>
@@ -747,14 +749,16 @@ const JobsPage: React.FC = () => {
                             <span className="text-sm text-gray-600">{formatSalary(job)}</span>
                           </div>
 
-                          {job.description && (
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                              {job.description}
-                            </p>
-                          )}
+                          <div className="mb-4 min-h-[60px]">
+                            {job.description && (
+                              <p className="text-gray-600 text-sm line-clamp-3">
+                                {job.description}
+                              </p>
+                            )}
+                          </div>
 
-                          {job.required_skills && job.required_skills.length > 0 && (
-                            <div className="mb-4">
+                          <div className="mb-4 min-h-[32px]">
+                            {job.required_skills && job.required_skills.length > 0 && (
                               <div className="flex flex-wrap gap-1">
                                 {job.required_skills.slice(0, 3).map((skill) => (
                                   <span
@@ -770,8 +774,8 @@ const JobsPage: React.FC = () => {
                                   </span>
                                 )}
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
 
                           <div className="flex items-center justify-between">
                             <div className="flex space-x-2 flex-1">

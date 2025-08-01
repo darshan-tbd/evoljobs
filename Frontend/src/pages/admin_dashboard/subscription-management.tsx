@@ -480,95 +480,97 @@ const AdminSubscriptionManagement: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-4 lg:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Subscription Management</h1>
-            <p className="text-gray-600 mt-2 text-lg">Manage subscription plans and monitor user subscriptions.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">Subscription Management</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">Manage subscription plans and monitor user subscriptions.</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
             <button
               onClick={handleRefresh}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
-              <ArrowPathIcon className="w-5 h-5 mr-2" />
-              Refresh Data
+              <ArrowPathIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Refresh Data</span>
+              <span className="sm:hidden">Refresh</span>
             </button>
             <button
               onClick={handlePlanCreate}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg sm:rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Create Plan
+              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Create Plan</span>
+              <span className="sm:hidden">Create</span>
             </button>
           </div>
         </div>
 
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Subscriptions</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.total_subscriptions)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Subscriptions</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-1">{formatNumber(stats.total_subscriptions)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                  <CreditCardIcon className="w-8 h-8 text-white" />
+                <div className="p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-2 flex-shrink-0">
+                  <CreditCardIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">{stats.active_subscriptions}</span>
-                <span className="text-gray-500 ml-2">active</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">active</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Subscriptions</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.active_subscriptions)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Active Subscriptions</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-1">{formatNumber(stats.active_subscriptions)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-                  <CheckCircleIcon className="w-8 h-8 text-white" />
+                <div className="p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl shadow-lg ml-2 flex-shrink-0">
+                  <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">+{stats.total_subscriptions - stats.active_subscriptions}</span>
-                <span className="text-gray-500 ml-2">inactive</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">inactive</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Monthly Revenue</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">${formatNumber(stats.monthly_revenue)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Monthly Revenue</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-1">${formatNumber(stats.monthly_revenue)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl shadow-lg">
-                  <CurrencyDollarIcon className="w-8 h-8 text-white" />
+                <div className="p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg sm:rounded-xl shadow-lg ml-2 flex-shrink-0">
+                  <CurrencyDollarIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">+{stats.active_subscriptions}</span>
-                <span className="text-gray-500 ml-2">paying users</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">paying users</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Users</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.total_users)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Users</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-1">{formatNumber(stats.total_users)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
-                  <UsersIcon className="w-8 h-8 text-white" />
+                <div className="p-1.5 sm:p-2 lg:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg ml-2 flex-shrink-0">
+                  <UsersIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">{Math.round((stats.active_subscriptions / stats.total_users) * 100)}%</span>
-                <span className="text-gray-500 ml-2">conversion rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">conversion rate</span>
               </div>
             </div>
           </div>
@@ -577,30 +579,32 @@ const AdminSubscriptionManagement: React.FC = () => {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-8" aria-label="Tabs">
+            <nav className="flex overflow-x-auto px-2 sm:px-4 lg:px-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab(0)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   activeTab === 0
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Subscription Plans
+                <span className="sm:hidden">Plans</span>
+                <span className="hidden sm:inline">Subscription Plans</span>
               </button>
               <button
                 onClick={() => setActiveTab(1)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ml-2 sm:ml-4 lg:ml-8 ${
                   activeTab === 1
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                User Subscriptions
+                <span className="sm:hidden">Users</span>
+                <span className="hidden sm:inline">User Subscriptions</span>
               </button>
               <button
                 onClick={() => setActiveTab(2)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ml-2 sm:ml-4 lg:ml-8 ${
                   activeTab === 2
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -611,27 +615,27 @@ const AdminSubscriptionManagement: React.FC = () => {
             </nav>
           </div>
 
-          <div className="p-8">
+          <div className="p-2 sm:p-4 lg:p-6 xl:p-8">
             {/* Plans Tab */}
             {activeTab === 0 && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Subscription Plans</h3>
-                  <div className="flex items-center space-x-4">
+              <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <h3 className="text-sm sm:text-lg font-semibold text-gray-900 truncate">Subscription Plans</h3>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                     <div className="relative">
-                      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <MagnifyingGlassIcon className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                       <input
                         type="text"
                         placeholder="Search plans..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full sm:w-auto"
                       />
                     </div>
                     <select
                       value={filterType}
                       onChange={(e) => setFilterType(e.target.value)}
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full sm:w-auto"
                     >
                       <option value="all">All Types</option>
                       <option value="free">Free</option>
@@ -642,7 +646,8 @@ const AdminSubscriptionManagement: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Desktop Table - Hidden on Mobile */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -722,6 +727,78 @@ const AdminSubscriptionManagement: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Cards - Visible on Mobile Only */}
+                <div className="md:hidden space-y-3">
+                  {plans
+                    .filter(plan => 
+                      plan.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                      (filterType === 'all' || plan.plan_type === filterType)
+                    )
+                    .map((plan) => (
+                    <div key={plan.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-1">{plan.name}</h4>
+                          <p className="text-sm text-gray-600 leading-relaxed">{plan.description}</p>
+                        </div>
+                        <div className="flex items-center space-x-1 ml-3 flex-shrink-0">
+                          <button
+                            onClick={() => handlePlanEdit(plan)}
+                            className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                            title="Edit Plan"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handlePlanDelete(plan.id, false)}
+                            className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Soft Delete"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Plan Details */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Type</span>
+                          <div className="mt-1">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPlanTypeColor(plan.plan_type)}`}>
+                              {plan.plan_type.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
+                          <div className="mt-1">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${plan.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {plan.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pricing & Limits */}
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Price:</span>
+                          <span className="font-medium text-gray-900">${plan.price}/month</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Duration:</span>
+                          <span className="font-medium text-gray-900">{plan.duration_days} days</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Daily Limit:</span>
+                          <span className="font-medium text-gray-900">{plan.daily_application_limit} companies</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

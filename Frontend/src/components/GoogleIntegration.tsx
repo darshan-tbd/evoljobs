@@ -269,7 +269,7 @@ const GoogleIntegrationComponent: React.FC = () => {
   const handleTriggerAutoApply = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/v1/google/integration/trigger_auto_apply/', {
+      const response = await fetch('http://127.0.0.1:8000/api/v1/google/integration/trigger_auto_apply/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

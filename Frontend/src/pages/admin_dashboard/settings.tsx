@@ -214,37 +214,70 @@ const AdminSettingsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          mb: { xs: 2, sm: 3 },
+          gap: { xs: 2, sm: 0 }
+        }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="h4" gutterBottom sx={{ 
+              fontWeight: 'bold',
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
               System Settings
             </Typography>
-            <Typography variant="body1" color="textSecondary">
+            <Typography variant="body1" color="textSecondary" sx={{
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}>
               Configure platform settings and preferences
             </Typography>
           </Box>
-          <Stack direction="row" spacing={2}>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={{ xs: 1, sm: 2 }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
             <Button
               startIcon={<RefreshIcon />}
               onClick={fetchSettings}
               variant="outlined"
+              size={{ xs: 'small', sm: 'medium' }}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             >
-              Reset
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Reset</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Reset</Box>
             </Button>
             <Button
               startIcon={<SaveIcon />}
               onClick={handleSaveSettings}
               variant="contained"
               disabled={saving}
+              size={{ xs: 'small', sm: 'medium' }}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             >
-              {saving ? 'Saving...' : 'Save Settings'}
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                {saving ? 'Saving...' : 'Save Settings'}
+              </Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                {saving ? 'Saving...' : 'Save'}
+              </Box>
             </Button>
           </Stack>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* General Settings */}
           <Grid item xs={12} md={6}>
             <Card>

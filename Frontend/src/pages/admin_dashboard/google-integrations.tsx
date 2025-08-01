@@ -320,67 +320,51 @@ const AdminGoogleIntegrationsPage: React.FC = () => {
   };
 
   const renderStats = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="p-5">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <LinkIcon className="h-6 w-6 text-gray-400" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Total Integrations</dt>
-                <dd className="text-lg font-medium text-gray-900">{stats?.total_integrations || 0}</dd>
-              </dl>
-            </div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
+      <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Integrations</p>
+            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{stats?.total_integrations || 0}</p>
+          </div>
+          <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+            <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="p-5">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CheckCircleIcon className="h-6 w-6 text-green-500" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Connected</dt>
-                <dd className="text-lg font-medium text-gray-900">{stats?.connected || 0}</dd>
-              </dl>
-            </div>
+      <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Connected</p>
+            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{stats?.connected || 0}</p>
+          </div>
+          <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+            <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="p-5">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <EnvelopeIcon className="h-6 w-6 text-blue-500" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Emails Today</dt>
-                <dd className="text-lg font-medium text-gray-900">{stats?.emails_sent_today || 0}</dd>
-              </dl>
-            </div>
+      <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Emails Today</p>
+            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{stats?.emails_sent_today || 0}</p>
+          </div>
+          <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+            <EnvelopeIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="p-5">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CogIcon className="h-6 w-6 text-purple-500" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Auto-Apply Active</dt>
-                <dd className="text-lg font-medium text-gray-900">{stats?.active_auto_apply || 0}</dd>
-              </dl>
-            </div>
+      <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Auto-Apply Active</p>
+            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{stats?.active_auto_apply || 0}</p>
+          </div>
+          <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+            <CogIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
           </div>
         </div>
       </div>
@@ -388,22 +372,23 @@ const AdminGoogleIntegrationsPage: React.FC = () => {
   );
 
   const renderIntegrationsTable = () => (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
-      <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Google Integrations</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+    <div className="bg-white shadow-lg rounded-lg sm:rounded-xl lg:rounded-2xl overflow-hidden border border-gray-200">
+      <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-5 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base sm:text-lg lg:text-xl font-medium text-gray-900 truncate">Google Integrations</h3>
+            <p className="mt-1 text-xs sm:text-sm text-gray-500 line-clamp-2">
               Manage user Google OAuth integrations and auto-apply settings
             </p>
           </div>
           <button
             onClick={() => fetchData()}
             disabled={loading}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-md sm:rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 flex-shrink-0"
           >
-            <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            <ArrowPathIcon className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+            <span className="sm:hidden">Ref</span>
           </button>
         </div>
       </div>
@@ -841,14 +826,12 @@ const AdminGoogleIntegrationsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-2 sm:space-y-3 lg:space-y-4 xl:space-y-6">
         {/* Header */}
-        <div className="md:flex md:items-center md:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              Google Integrations
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">Google Integrations</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">
               Manage Google OAuth integrations and auto-apply functionality
             </p>
           </div>
@@ -870,8 +853,8 @@ const AdminGoogleIntegrationsPage: React.FC = () => {
         {renderStats()}
 
         {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <nav className="-mb-px flex space-x-2 sm:space-x-4 lg:space-x-8">
             {[
               { key: 'integrations', name: 'Integrations', icon: LinkIcon },
               { key: 'emails', name: 'Emails', icon: EnvelopeIcon },
@@ -885,10 +868,11 @@ const AdminGoogleIntegrationsPage: React.FC = () => {
                   activeTab === tab.key
                     ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                } whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm flex items-center flex-shrink-0`}
               >
-                <tab.icon className="h-5 w-5 mr-2" />
-                {tab.name}
+                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{tab.name}</span>
+                <span className="sm:hidden">{tab.name.substring(0, 4)}</span>
               </button>
             ))}
           </nav>
@@ -908,22 +892,22 @@ const AdminGoogleIntegrationsPage: React.FC = () => {
 
         {/* Snackbar */}
         {snackbar.open && (
-          <div className="fixed top-4 right-4 z-50">
-            <div className={`bg-white border-l-4 p-4 shadow-md rounded ${
-              snackbar.type === 'success' ? 'border-green-400' :
-              snackbar.type === 'error' ? 'border-red-400' :
-              snackbar.type === 'warning' ? 'border-yellow-400' :
-              'border-blue-400'
+          <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 max-w-sm">
+            <div className={`bg-white border-l-4 p-3 sm:p-4 shadow-2xl rounded-lg sm:rounded-xl ${
+              snackbar.type === 'success' ? 'border-green-500' :
+              snackbar.type === 'error' ? 'border-red-500' :
+              snackbar.type === 'warning' ? 'border-yellow-500' :
+              'border-blue-500'
             }`}>
               <div className="flex">
                 <div className="flex-shrink-0">
-                  {snackbar.type === 'success' && <CheckCircleIcon className="h-5 w-5 text-green-400" />}
-                  {snackbar.type === 'error' && <XCircleIcon className="h-5 w-5 text-red-400" />}
-                  {snackbar.type === 'warning' && <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />}
-                  {snackbar.type === 'info' && <InformationCircleIcon className="h-5 w-5 text-blue-400" />}
+                  {snackbar.type === 'success' && <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />}
+                  {snackbar.type === 'error' && <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />}
+                  {snackbar.type === 'warning' && <ExclamationTriangleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />}
+                  {snackbar.type === 'info' && <InformationCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />}
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-gray-700">{snackbar.message}</p>
+                <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm text-gray-700">{snackbar.message}</p>
                 </div>
               </div>
             </div>

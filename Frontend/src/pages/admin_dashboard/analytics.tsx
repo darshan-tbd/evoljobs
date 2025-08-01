@@ -223,18 +223,18 @@ const AdminAnalyticsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-2 sm:space-y-3 lg:space-y-4 xl:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-600 mt-2 text-lg">Platform insights and performance metrics</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">Analytics Dashboard</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">Platform insights and performance metrics</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg sm:rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
             >
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
@@ -244,97 +244,99 @@ const AdminAnalyticsPage: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl"
+              className="flex items-center px-3 py-1.5 sm:px-4 sm:py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl text-xs sm:text-sm lg:text-base"
             >
-              <ArrowPathIcon className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              <ArrowPathIcon className={`w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Ref</span>
             </button>
           </div>
         </div>
 
         {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
           {/* Total Users */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Users</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(analyticsData.overview.totalUsers)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Users</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(analyticsData.overview.totalUsers)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                <UsersIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <UsersIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
               {getGrowthIcon(analyticsData.userGrowth.growthRate)}
-              <span className={`font-semibold ml-2 ${getGrowthColor(analyticsData.userGrowth.growthRate)}`}>
+              <span className={`font-semibold ml-1 sm:ml-2 ${getGrowthColor(analyticsData.userGrowth.growthRate)} truncate`}>
                 {analyticsData.userGrowth.growthRate > 0 ? '+' : ''}{analyticsData.userGrowth.growthRate.toFixed(1)}%
               </span>
-              <span className="text-gray-500 ml-2">from last period</span>
+              <span className="text-gray-500 ml-1 sm:ml-2 hidden sm:inline">from last period</span>
             </div>
           </div>
 
           {/* Total Companies */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Companies</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(analyticsData.overview.totalCompanies)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Companies</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(analyticsData.overview.totalCompanies)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
-                <BuildingOfficeIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <BuildingOfficeIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
-              <span className="text-gray-500">Active companies</span>
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
+              <span className="text-gray-500 truncate">Active companies</span>
             </div>
           </div>
 
           {/* Active Jobs */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Jobs</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(analyticsData.overview.activeJobs)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Active Jobs</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(analyticsData.overview.activeJobs)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-                <BriefcaseIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <BriefcaseIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
-              <span className="text-gray-500">Total: {formatNumber(analyticsData.overview.totalJobs)}</span>
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
+              <span className="text-gray-500 truncate">Total: {formatNumber(analyticsData.overview.totalJobs)}</span>
             </div>
           </div>
 
           {/* Pending Applications */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending Applications</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(analyticsData.overview.pendingApplications)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Pending Applications</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(analyticsData.overview.pendingApplications)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
-                <DocumentTextIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <DocumentTextIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
-              <span className="text-gray-500">Total: {formatNumber(analyticsData.overview.totalApplications)}</span>
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
+              <span className="text-gray-500 truncate">Total: {formatNumber(analyticsData.overview.totalApplications)}</span>
             </div>
           </div>
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
           {/* User Growth Chart */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">User Growth Trend</h3>
-              <div className="flex items-center text-sm text-gray-500">
-                <CalendarIcon className="w-4 h-4 mr-1" />
-                Last 30 days
+          <div className="lg:col-span-2 bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 lg:mb-6 space-y-2 sm:space-y-0">
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate">User Growth Trend</h3>
+              <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Last 30 days</span>
+                <span className="sm:hidden">30d</span>
               </div>
             </div>
-            <div className="h-80">
+            <div className="h-40 sm:h-60 lg:h-80">
               <Line
                 data={{
                   labels: analyticsData.userGrowth.labels,
@@ -383,9 +385,9 @@ const AdminAnalyticsPage: React.FC = () => {
           </div>
 
           {/* User Type Distribution */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">User Type Distribution</h3>
-            <div className="h-80">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6 truncate">User Type Distribution</h3>
+            <div className="h-40 sm:h-60 lg:h-80">
               <Pie
                 data={{
                   labels: ['Job Seekers', 'Employers', 'Admins'],
@@ -429,24 +431,24 @@ const AdminAnalyticsPage: React.FC = () => {
         </div>
 
         {/* Detailed Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
           {/* Job Categories */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Job Categories</h3>
-            <div className="space-y-4">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6 truncate">Job Categories</h3>
+            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
               {analyticsData.jobCategories.map((category, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg mr-4">
-                      <AcademicCapIcon className="w-5 h-5 text-blue-600" />
+                <div key={index} className="flex items-center justify-between p-2 sm:p-3 lg:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="p-1 sm:p-2 bg-blue-100 rounded-md sm:rounded-lg mr-2 sm:mr-3 lg:mr-4 flex-shrink-0">
+                      <AcademicCapIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-blue-600" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{category.category}</p>
-                      <p className="text-sm text-gray-500">{category.count} jobs</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate">{category.category}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">{category.count} jobs</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-blue-600">{category.percentage}%</p>
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <p className="font-bold text-blue-600 text-xs sm:text-sm lg:text-base">{category.percentage}%</p>
                   </div>
                 </div>
               ))}
@@ -454,23 +456,23 @@ const AdminAnalyticsPage: React.FC = () => {
           </div>
 
           {/* Top Companies */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Top Companies</h3>
-            <div className="space-y-4">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6 truncate">Top Companies</h3>
+            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
               {analyticsData.topCompanies.map((company, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center">
-                    <div className="p-2 bg-purple-100 rounded-lg mr-4">
-                      <BuildingOfficeIcon className="w-5 h-5 text-purple-600" />
+                <div key={index} className="flex items-center justify-between p-2 sm:p-3 lg:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="p-1 sm:p-2 bg-purple-100 rounded-md sm:rounded-lg mr-2 sm:mr-3 lg:mr-4 flex-shrink-0">
+                      <BuildingOfficeIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-purple-600" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{company.name}</p>
-                      <p className="text-sm text-gray-500">{company.jobCount} jobs • {company.applicationCount} applications</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate">{company.name}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">{company.jobCount} jobs • {company.applicationCount} applications</p>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <StarIcon className="w-4 h-4 text-yellow-500 mr-1" />
-                    <span className="font-semibold text-gray-900">{company.avgRating.toFixed(1)}</span>
+                  <div className="flex items-center flex-shrink-0 ml-2">
+                    <StarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 mr-1" />
+                    <span className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base">{company.avgRating.toFixed(1)}</span>
                   </div>
                 </div>
               ))}
@@ -479,37 +481,38 @@ const AdminAnalyticsPage: React.FC = () => {
         </div>
 
         {/* Most Viewed Jobs */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Most Viewed Jobs</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+          <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6 truncate">Most Viewed Jobs</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
             {analyticsData.mostViewedJobs.map((job, index) => (
-              <div key={index} className="p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <EyeIcon className="w-5 h-5 text-green-600" />
+              <div key={index} className="p-3 sm:p-4 lg:p-6 bg-gray-50 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex items-start justify-between mb-2 sm:mb-3 lg:mb-4">
+                  <div className="p-1 sm:p-2 bg-green-100 rounded-md sm:rounded-lg flex-shrink-0">
+                    <EyeIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-green-600" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">{job.views} views</p>
-                    <p className="text-xs text-gray-500">{job.applications} applications</p>
+                  <div className="text-right ml-2">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-900">{job.views} views</p>
+                    <p className="text-xs text-gray-500">{job.applications} apps</p>
                   </div>
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">{job.title}</h4>
-                <p className="text-sm text-gray-600">{job.company || 'Unknown Company'}</p>
+                <h4 className="font-semibold text-gray-900 mb-1 sm:mb-2 line-clamp-2 text-xs sm:text-sm lg:text-base">{job.title}</h4>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">{job.company || 'Unknown Company'}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Application Trends */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Application Trends</h3>
-            <div className="flex items-center text-sm text-gray-500">
-              <CalendarIcon className="w-4 h-4 mr-1" />
-              Last 30 days
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 lg:mb-6 space-y-2 sm:space-y-0">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate">Application Trends</h3>
+            <div className="flex items-center text-xs sm:text-sm text-gray-500">
+              <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span className="hidden sm:inline">Last 30 days</span>
+              <span className="sm:hidden">30d</span>
             </div>
           </div>
-          <div className="h-80">
+          <div className="h-40 sm:h-60 lg:h-80">
             <Bar
               data={{
                 labels: analyticsData.applicationTrends.labels,
@@ -554,21 +557,21 @@ const AdminAnalyticsPage: React.FC = () => {
         </div>
 
         {/* Location Statistics */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Top Locations</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+          <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 sm:mb-4 lg:mb-6 truncate">Top Locations</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
             {analyticsData.locationStats.map((location, index) => (
-              <div key={index} className="p-6 bg-gray-50 rounded-xl">
-                <div className="flex items-center mb-4">
-                  <div className="p-2 bg-blue-100 rounded-lg mr-4">
-                    <MapPinIcon className="w-5 h-5 text-blue-600" />
+              <div key={index} className="p-3 sm:p-4 lg:p-6 bg-gray-50 rounded-lg sm:rounded-xl">
+                <div className="flex items-center mb-2 sm:mb-3 lg:mb-4">
+                  <div className="p-1 sm:p-2 bg-blue-100 rounded-md sm:rounded-lg mr-2 sm:mr-3 lg:mr-4 flex-shrink-0">
+                    <MapPinIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-blue-600" />
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{location.location}</h4>
-                    <p className="text-sm text-gray-500">{location.jobCount} jobs</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base truncate">{location.location}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500">{location.jobCount} jobs</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
                   <span className="text-gray-600">Users</span>
                   <span className="font-semibold text-gray-900">{location.userCount}</span>
                 </div>

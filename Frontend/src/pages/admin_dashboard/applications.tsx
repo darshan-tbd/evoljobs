@@ -315,124 +315,127 @@ const AdminApplicationsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-2 sm:space-y-3 lg:space-y-4 xl:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Application Management</h1>
-            <p className="text-gray-600 mt-2 text-lg">Review and manage job applications from candidates.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">Application Management</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">Review and manage job applications from candidates.</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
             <button
               onClick={handleRefresh}
-              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200"
+              className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm lg:text-base"
             >
-              <ArrowPathIcon className="w-5 h-5 mr-2" />
-              Refresh
+              <ArrowPathIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Refresh</span>
             </button>
-            <button className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-              <PlusIcon className="w-5 h-5 mr-2" />
-              New Application
+            <button className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-xs sm:text-sm lg:text-base">
+              <PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">New Application</span>
+              <span className="sm:hidden">New</span>
             </button>
           </div>
         </div>
 
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Applications</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.total_applications || 0)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Applications</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.total_applications || 0)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                  <DocumentTextIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <DocumentTextIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">+{stats?.recent_activity?.new_applications_today || 0}</span>
-                <span className="text-gray-500 ml-2">new today</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">new today</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending Review</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.pending_applications || 0)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Pending Review</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.pending_applications || 0)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl shadow-lg">
-                  <ClockIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-yellow-600 font-semibold">{stats?.reviewing_applications || 0}</span>
-                <span className="text-gray-500 ml-2">reviewing</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">reviewing</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Shortlisted</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.shortlisted_applications || 0)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Shortlisted</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.shortlisted_applications || 0)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                  <StarIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <StarIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-blue-600 font-semibold">{stats?.hired_applications || 0}</span>
-                <span className="text-gray-500 ml-2">hired</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">hired</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Rejected</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.rejected_applications || 0)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Rejected</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.rejected_applications || 0)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg">
-                  <XCircleIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <XCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-red-600 font-semibold">{stats?.total_applications && stats?.rejected_applications ? ((stats.rejected_applications / stats.total_applications) * 100).toFixed(1) : '0'}%</span>
-                <span className="text-gray-500 ml-2">rejection rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">rejection rate</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="flex-1 max-w-md">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search applications..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-8 sm:pl-9 lg:pl-10 pr-2 sm:pr-3 lg:pr-4 py-1.5 sm:py-2 lg:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-xs sm:text-sm lg:text-base"
                 />
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200"
+                className="flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm lg:text-base"
               >
-                <FunnelIcon className="w-5 h-5 mr-2" />
-                Filters
+                <FunnelIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filter</span>
                 {showFilters ? (
-                  <ChevronUpIcon className="w-4 h-4 ml-2" />
+                  <ChevronUpIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                 ) : (
-                  <ChevronDownIcon className="w-4 h-4 ml-2" />
+                  <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                 )}
               </button>
             </div>
@@ -440,14 +443,14 @@ const AdminApplicationsPage: React.FC = () => {
 
           {/* Filter Options */}
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -462,11 +465,11 @@ const AdminApplicationsPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Job</label>
                   <select
                     value={filterJob}
                     onChange={(e) => setFilterJob(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Jobs</option>
                     {Array.from(new Set(applications.map(app => app.job_title).filter(Boolean))).map(jobTitle => {
@@ -480,11 +483,11 @@ const AdminApplicationsPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Company</label>
                   <select
                     value={filterCompany}
                     onChange={(e) => setFilterCompany(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Companies</option>
                     {Array.from(new Set(applications.map(app => app.job_company).filter(Boolean))).map(companyName => {
@@ -608,28 +611,28 @@ const AdminApplicationsPage: React.FC = () => {
         </div>
 
         {/* Applications Cards - Mobile & Tablet */}
-        <div className="lg:hidden space-y-4">
+        <div className="lg:hidden space-y-3">
           {filteredApplications.map((application) => (
-            <div key={application.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+            <div key={application.id} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3 flex-1">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-semibold text-sm">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold text-xs sm:text-sm">
                       {application.applicant_name?.[0] || 'A'}{application.applicant_name?.split(' ')[1]?.[0] || 'P'}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                    <h3 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                       {application.applicant_name || 'N/A'}
                     </h3>
-                    <p className="text-sm text-gray-500 truncate">{application.applicant_email || 'N/A'}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{application.applicant_email || 'N/A'}</p>
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1 sm:mt-2">
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}>
                         {getStatusIcon(application.status)}
-                        <span className="ml-1 capitalize">{application.status}</span>
+                        <span className="ml-1 capitalize hidden sm:inline">{application.status}</span>
                       </span>
                       {application.is_external_application && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           External
                         </span>
                       )}
@@ -638,47 +641,47 @@ const AdminApplicationsPage: React.FC = () => {
                 </div>
                 
                 {/* Action Menu */}
-                <div className="flex items-center space-x-1 ml-2">
+                <div className="flex items-center space-x-0.5 sm:space-x-1 ml-1 sm:ml-2 flex-shrink-0">
                   <button
                     onClick={() => handleViewApplication(application)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="p-1 sm:p-1.5 text-blue-600 hover:bg-blue-50 rounded-md sm:rounded-lg transition-colors"
                     title="View Details"
                   >
-                    <EyeIcon className="w-4 h-4" />
+                    <EyeIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                   <button
                     onClick={() => handleUpdateStatus(application.id, 'shortlisted')}
-                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    className="p-1 sm:p-1.5 text-green-600 hover:bg-green-50 rounded-md sm:rounded-lg transition-colors"
                     title="Update Status"
                   >
-                    <PencilIcon className="w-4 h-4" />
+                    <PencilIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteApplication(application)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-1 sm:p-1.5 text-red-600 hover:bg-red-50 rounded-md sm:rounded-lg transition-colors"
                     title="Delete Application"
                   >
-                    <TrashIcon className="w-4 h-4" />
+                    <TrashIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 </div>
               </div>
               
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <BriefcaseIcon className="w-4 h-4 mr-2" />
-                    <span className="font-medium">{application.job_title || 'N/A'}</span>
+              <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                    <BriefcaseIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                    <span className="font-medium truncate">{application.job_title || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <BuildingOfficeIcon className="w-4 h-4 mr-2" />
-                    <span>{application.job_company || 'N/A'}</span>
+                  <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                    <BuildingOfficeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                    <span className="truncate">{application.job_company || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 space-y-1 sm:space-y-0">
                     <div className="flex items-center">
-                      <CalendarIcon className="w-3 h-3 mr-1" />
-                      Applied: {new Date(application.applied_at).toLocaleDateString()}
+                      <CalendarIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+                      <span>Applied: {new Date(application.applied_at).toLocaleDateString()}</span>
                     </div>
-                    <span>ID: {application.id}</span>
+                    <span className="text-right">ID: {application.id}</span>
                   </div>
                 </div>
               </div>
@@ -919,29 +922,29 @@ const AdminApplicationsPage: React.FC = () => {
 
       {/* Snackbar */}
       {snackbar.open && (
-        <div className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 max-w-sm bg-white rounded-lg sm:rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
           snackbar.type === 'success' ? 'border-green-500' : 
           snackbar.type === 'error' ? 'border-red-500' : 
           snackbar.type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
         }`}>
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 {snackbar.type === 'success' && (
-                  <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                  <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                 )}
                 {snackbar.type === 'error' && (
-                  <XCircleIcon className="w-6 h-6 text-red-500" />
+                  <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                 )}
                 {snackbar.type === 'warning' && (
-                  <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
+                  <ExclamationTriangleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
                 )}
                 {snackbar.type === 'info' && (
-                  <InformationCircleIcon className="w-6 h-6 text-blue-500" />
+                  <InformationCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 )}
               </div>
-              <div className="ml-3 flex-1">
-                <p className={`text-sm font-medium ${
+              <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm font-medium ${
                   snackbar.type === 'success' ? 'text-green-800' : 
                   snackbar.type === 'error' ? 'text-red-800' : 
                   snackbar.type === 'warning' ? 'text-yellow-800' : 'text-blue-800'
@@ -949,17 +952,17 @@ const AdminApplicationsPage: React.FC = () => {
                   {snackbar.message}
                 </p>
               </div>
-              <div className="ml-4 flex-shrink-0">
+              <div className="ml-2 sm:ml-4 flex-shrink-0">
                 <button
                   onClick={() => setSnackbar({ ...snackbar, open: false })}
-                  className={`inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  className={`inline-flex rounded-md sm:rounded-lg p-1 sm:p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                     snackbar.type === 'success' ? 'text-green-500 hover:bg-green-100 focus:ring-green-500' : 
                     snackbar.type === 'error' ? 'text-red-500 hover:bg-red-100 focus:ring-red-500' : 
                     snackbar.type === 'warning' ? 'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-500' : 
                     'text-blue-500 hover:bg-blue-100 focus:ring-blue-500'
                   }`}
                 >
-                  <XMarkIcon className="w-5 h-5" />
+                  <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>

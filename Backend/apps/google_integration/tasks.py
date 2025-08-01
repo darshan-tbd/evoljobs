@@ -200,11 +200,11 @@ def trigger_daily_auto_apply():
                 from apps.subscriptions.services import SubscriptionService
                 subscription_service = SubscriptionService()
                 
-                subscription = subscription_service.get_active_subscription(integration.user)
+                subscription = subscription_service.get_user_active_subscription(integration.user)
                 if not subscription:
                     continue
                 
-                daily_usage = subscription_service.get_daily_usage(integration.user)
+                daily_usage = subscription_service.get_today_usage(integration.user)
                 remaining = daily_usage.get_remaining_applications(
                     subscription.plan.daily_application_limit
                 )

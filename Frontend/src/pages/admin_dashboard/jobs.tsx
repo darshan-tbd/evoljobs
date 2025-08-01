@@ -372,15 +372,15 @@ const AdminJobsPage: React.FC = () => {
   };
 
   const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (job.location?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-                         [...job.required_skills, ...job.preferred_skills].some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         job?.company?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (job?.location?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         [...job?.required_skills, ...job?.preferred_skills].some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'active' && job.status === 'active') ||
-                         (filterStatus === 'inactive' && job.status !== 'active') ||
-                         (filterStatus === 'featured' && job.is_featured);
+                         (filterStatus === 'active' && job?.status === 'active') ||
+                         (filterStatus === 'inactive' && job?.status !== 'active') ||
+                         (filterStatus === 'featured' && job?.is_featured);
     
     const matchesType = filterType === 'all' || job.job_type === filterType;
     const matchesExperience = filterExperience === 'all' || job.experience_level === filterExperience;
@@ -416,124 +416,127 @@ const AdminJobsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-2 sm:space-y-3 lg:space-y-4 xl:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Job Management</h1>
-            <p className="text-gray-600 mt-2 text-lg">Manage and monitor all job postings.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">Job Management</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">Manage and monitor all job postings.</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
             <button
               onClick={handleRefresh}
-              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200"
+              className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm lg:text-base"
             >
-              <ArrowPathIcon className="w-5 h-5 mr-2" />
-              Refresh
+              <ArrowPathIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">Refresh</span>
             </button>
-            <button className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Post Job
+            <button className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-xs sm:text-sm lg:text-base">
+              <PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Post Job</span>
+              <span className="sm:hidden">Post</span>
             </button>
           </div>
         </div>
 
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3 xl:gap-4">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Jobs</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.total)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Jobs</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.total)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                  <BriefcaseIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <BriefcaseIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">+{stats.new_today}</span>
-                <span className="text-gray-500 ml-2">new today</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">new today</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Jobs</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.active)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Active Jobs</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.active)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-                  <CheckCircleIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-green-600 font-semibold">{((stats.active / stats.total) * 100).toFixed(1)}%</span>
-                <span className="text-gray-500 ml-2">active rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">active rate</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Featured Jobs</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.featured)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Featured Jobs</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.featured)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
-                  <StarIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <StarIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-purple-600 font-semibold">{((stats.featured / stats.total) * 100).toFixed(1)}%</span>
-                <span className="text-gray-500 ml-2">featured rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">featured rate</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Remote Jobs</p>
-                  <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats.remote)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Remote Jobs</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats.remote)}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
-                  <GlobeAltIcon className="w-8 h-8 text-white" />
+                <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                  <GlobeAltIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
                 </div>
               </div>
-              <div className="mt-6 flex items-center text-sm">
+              <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
                 <span className="text-orange-600 font-semibold">{((stats.remote / stats.total) * 100).toFixed(1)}%</span>
-                <span className="text-gray-500 ml-2">remote rate</span>
+                <span className="text-gray-500 ml-1 sm:ml-2 truncate">remote rate</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="flex-1 max-w-md">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search jobs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-8 sm:pl-9 lg:pl-10 pr-2 sm:pr-3 lg:pr-4 py-1.5 sm:py-2 lg:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-xs sm:text-sm lg:text-base"
                 />
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200"
+                className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm lg:text-base"
               >
-                <FunnelIcon className="w-5 h-5 mr-2" />
-                Filters
+                <FunnelIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filter</span>
                 {showFilters ? (
-                  <ChevronUpIcon className="w-4 h-4 ml-2" />
+                  <ChevronUpIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                 ) : (
-                  <ChevronDownIcon className="w-4 h-4 ml-2" />
+                  <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                 )}
               </button>
             </div>
@@ -541,14 +544,14 @@ const AdminJobsPage: React.FC = () => {
 
           {/* Filter Options */}
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -558,11 +561,11 @@ const AdminJobsPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Job Type</label>
                   <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Types</option>
                     <option value="full_time">Full Time</option>
@@ -574,11 +577,11 @@ const AdminJobsPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Experience Level</label>
                   <select
                     value={filterExperience}
                     onChange={(e) => setFilterExperience(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Levels</option>
                     <option value="entry">Entry</option>
@@ -725,46 +728,46 @@ const AdminJobsPage: React.FC = () => {
 
           {/* Jobs Cards - Mobile & Tablet */}
           <div className="lg:hidden">
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 space-y-3">
               {filteredJobs.map((job) => (
-                <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div key={job.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
                         {job.company.logo ? (
-                          <img src={job.company.logo} alt={job.company.name} className="w-6 h-6 rounded" />
+                          <img src={job.company.logo} alt={job.company.name} className="w-4 h-4 sm:w-6 sm:h-6 rounded" />
                         ) : (
-                          <BuildingOfficeIcon className="w-5 h-5 text-white" />
+                          <BuildingOfficeIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{job.title}</h3>
-                        <p className="text-sm text-gray-600">{job.company.name}</p>
+                        <h3 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-1">{job.title}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{job.company.name}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-1 ml-2">
+                    <div className="flex items-center space-x-0.5 sm:space-x-1 ml-1 sm:ml-2 flex-shrink-0">
                       <button
                         onClick={() => handleViewJob(job)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1 sm:p-1.5 text-blue-600 hover:bg-blue-50 rounded-md sm:rounded-lg transition-colors"
                         title="View Details"
                       >
-                        <EyeIcon className="w-4 h-4" />
+                        <EyeIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => handleToggleFeatured(job)}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-1 sm:p-1.5 rounded-md sm:rounded-lg transition-colors ${
                           job.is_featured 
                             ? 'text-yellow-600 hover:bg-yellow-50' 
                             : 'text-purple-600 hover:bg-purple-50'
                         }`}
                         title={job.is_featured ? 'Unfeature' : 'Feature'}
                       >
-                        <StarIcon className="w-4 h-4" />
+                        <StarIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
-                                             <button
+                      <button
                          onClick={() => handleToggleActive(job)}
-                         className={`p-2 rounded-lg transition-colors ${
+                         className={`p-1 sm:p-1.5 rounded-md sm:rounded-lg transition-colors ${
                            job.status === 'active' 
                              ? 'text-red-600 hover:bg-red-50' 
                              : 'text-green-600 hover:bg-green-50'
@@ -772,45 +775,45 @@ const AdminJobsPage: React.FC = () => {
                          title={job.status === 'active' ? 'Deactivate' : 'Activate'}
                        >
                          {job.status === 'active' ? (
-                           <XCircleIcon className="w-4 h-4" />
+                           <XCircleIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                          ) : (
-                           <CheckCircleIcon className="w-4 h-4" />
+                           <CheckCircleIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                          )}
                        </button>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600 line-clamp-2">{job.description}</p>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{job.description}</p>
                     
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getJobTypeColor(job.job_type)}`}>
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getJobTypeColor(job.job_type)}`}>
                         {job.job_type.replace('_', ' ')}
                       </span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getExperienceColor(job.experience_level)}`}>
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getExperienceColor(job.experience_level)}`}>
                         {job.experience_level.replace('_', ' ')}
                       </span>
                       {job.remote_option === 'remote' && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           Remote
                         </span>
                       )}
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(job.status, job.is_featured)}`}>
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium border ${getStatusColor(job.status, job.is_featured)}`}>
                         {getStatusIcon(job.status, job.is_featured)}
-                        <span className="ml-1">{getStatusText(job.status, job.is_featured)}</span>
+                        <span className="ml-1 hidden sm:inline">{getStatusText(job.status, job.is_featured)}</span>
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-1.5 sm:pt-2 text-xs text-gray-500 space-y-1 sm:space-y-0">
+                      <div className="flex items-center space-x-2 sm:space-x-4">
                         <span className="flex items-center">
-                          <MapPinIcon className="w-3 h-3 mr-1" />
-                          {job.location?.name || 'No location'}
+                          <MapPinIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">{job.location?.name || 'No location'}</span>
                         </span>
-                        <span>{job.applications_count} applications</span>
-                        <span>{job.views_count} views</span>
+                        <span className="whitespace-nowrap">{job.applications_count} applications</span>
+                        <span className="whitespace-nowrap hidden sm:inline">{job.views_count} views</span>
                       </div>
-                      <span>{new Date(job.created_at).toLocaleDateString()}</span>
+                      <span className="text-right">{new Date(job.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
@@ -829,9 +832,9 @@ const AdminJobsPage: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mt-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                 Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
                 <span className="font-medium">
                   {Math.min(currentPage * pageSize, totalJobs)}
@@ -839,33 +842,34 @@ const AdminJobsPage: React.FC = () => {
                 of <span className="font-medium">{totalJobs}</span> jobs
               </div>
               
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center sm:justify-end space-x-1 sm:space-x-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md sm:rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Prev</span>
                 </button>
                 
-                <div className="flex items-center space-x-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                <div className="flex items-center space-x-0.5 sm:space-x-1">
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                     let pageNum;
-                    if (totalPages <= 5) {
+                    if (totalPages <= 3) {
                       pageNum = i + 1;
-                    } else if (currentPage <= 3) {
+                    } else if (currentPage <= 2) {
                       pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
+                    } else if (currentPage >= totalPages - 1) {
+                      pageNum = totalPages - 2 + i;
                     } else {
-                      pageNum = currentPage - 2 + i;
+                      pageNum = currentPage - 1 + i;
                     }
                     
                     return (
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                        className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md sm:rounded-lg ${
                           currentPage === pageNum
                             ? 'bg-blue-600 text-white'
                             : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
@@ -880,9 +884,10 @@ const AdminJobsPage: React.FC = () => {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md sm:rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
+                  <span className="hidden sm:inline">Next</span>
+                  <span className="sm:hidden">Next</span>
                 </button>
               </div>
             </div>
@@ -1087,29 +1092,29 @@ const AdminJobsPage: React.FC = () => {
 
       {/* Snackbar */}
       {snackbar.open && (
-        <div className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 max-w-sm bg-white rounded-lg sm:rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
           snackbar.type === 'success' ? 'border-green-500' : 
           snackbar.type === 'error' ? 'border-red-500' : 
           snackbar.type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
         }`}>
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 {snackbar.type === 'success' && (
-                  <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                  <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                 )}
                 {snackbar.type === 'error' && (
-                  <XCircleIcon className="w-6 h-6 text-red-500" />
+                  <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                 )}
                 {snackbar.type === 'warning' && (
-                  <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
+                  <ExclamationTriangleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
                 )}
                 {snackbar.type === 'info' && (
-                  <InformationCircleIcon className="w-6 h-6 text-blue-500" />
+                  <InformationCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 )}
               </div>
-              <div className="ml-3 flex-1">
-                <p className={`text-sm font-medium ${
+              <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm font-medium ${
                   snackbar.type === 'success' ? 'text-green-800' : 
                   snackbar.type === 'error' ? 'text-red-800' : 
                   snackbar.type === 'warning' ? 'text-yellow-800' : 'text-blue-800'
@@ -1117,17 +1122,17 @@ const AdminJobsPage: React.FC = () => {
                   {snackbar.message}
                 </p>
               </div>
-              <div className="ml-4 flex-shrink-0">
+              <div className="ml-2 sm:ml-4 flex-shrink-0">
                 <button
                   onClick={() => setSnackbar({ ...snackbar, open: false })}
-                  className={`inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  className={`inline-flex rounded-md sm:rounded-lg p-1 sm:p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                     snackbar.type === 'success' ? 'text-green-500 hover:bg-green-100 focus:ring-green-500' : 
                     snackbar.type === 'error' ? 'text-red-500 hover:bg-red-100 focus:ring-red-500' : 
                     snackbar.type === 'warning' ? 'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-500' : 
                     'text-blue-500 hover:bg-blue-100 focus:ring-blue-500'
                   }`}
                 >
-                  <XMarkIcon className="w-5 h-5" />
+                  <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>

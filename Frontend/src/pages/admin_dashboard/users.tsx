@@ -189,6 +189,8 @@ const AdminUsersPage: React.FC = () => {
     });
   };
 
+
+
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
     setShowUserModal(true);
@@ -336,14 +338,29 @@ const AdminUsersPage: React.FC = () => {
 
     try {
       setActionLoading(true);
+      
+      // Get the authorization token
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+
+      console.log('Attempting to delete user:', deletingUser.id);
+      console.log('API URL:', `http://127.0.0.1:8000/api/v1/users/admin-users/${deletingUser.id}/`);
+
       const response = await fetch(`http://127.0.0.1:8000/api/v1/users/admin-users/${deletingUser.id}/`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
+      console.log('Delete response status:', response.status);
+      console.log('Delete response headers:', response.headers);
+
       if (response.ok) {
+        // Remove user from local state
         setUsers(users.filter(u => u.id !== deletingUser.id));
         setSnackbar({
           open: true,
@@ -352,10 +369,24 @@ const AdminUsersPage: React.FC = () => {
         });
         setShowDeleteModal(false);
         setDeletingUser(null);
+        
+        // Refresh stats
+        fetchStats();
       } else {
-        throw new Error('Failed to delete user');
+        // Try to get error details from response
+        let errorMessage = 'Failed to delete user';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+          console.error('Delete error response:', errorData);
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
     } catch (err: any) {
+      console.error('Delete user error:', err);
       setSnackbar({
         open: true,
         message: err.message || 'Failed to delete user',
@@ -479,20 +510,21 @@ const AdminUsersPage: React.FC = () => {
 
   return (
       <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-4 lg:space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-            <h1 className="text-4xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600 mt-2 text-lg">Manage all users, profiles, experiences, and education records.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 truncate">User Management</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm lg:text-base xl:text-lg line-clamp-2">Manage all users, profiles, experiences, and education records.</p>
             </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
             <button
               onClick={handleRefresh}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 xl:px-6 xl:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl text-xs sm:text-sm lg:text-base"
             >
-              <ArrowPathIcon className="w-5 h-5 mr-2" />
-              Refresh Data
+              <ArrowPathIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Refresh Data</span>
+              <span className="sm:hidden">Refresh</span>
             </button>
             <button
               onClick={() => {
@@ -508,155 +540,157 @@ const AdminUsersPage: React.FC = () => {
                 });
                 setShowEditModal(true);
               }}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 xl:px-6 xl:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg sm:rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl text-xs sm:text-sm lg:text-base"
             >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Create User
+              <PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Create User</span>
+              <span className="sm:hidden">Create</span>
             </button>
           </div>
           </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 xl:gap-6">
           {/* Total Users */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Users</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.total || 0)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Total Users</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.total || 0)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                <UsersIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <UsersIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
               <span className="text-green-600 font-semibold">+{stats?.new_today || 0}</span>
-              <span className="text-gray-500 ml-2">new today</span>
+              <span className="text-gray-500 ml-1 sm:ml-2 truncate">new today</span>
             </div>
           </div>
 
           {/* Active Users */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Users</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.active || 0)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Active Users</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.active || 0)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg">
-                <CheckCircleIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
               <span className="text-green-600 font-semibold">{stats?.verified || 0}</span>
-              <span className="text-gray-500 ml-2">verified</span>
+              <span className="text-gray-500 ml-1 sm:ml-2 truncate">verified</span>
             </div>
           </div>
 
           {/* Job Seekers */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Job Seekers</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.by_type?.job_seekers || 0)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Job Seekers</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.by_type?.job_seekers || 0)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-                <UserIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <UserIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
               <span className="text-blue-600 font-semibold">{stats?.with_profiles || 0}</span>
-              <span className="text-gray-500 ml-2">with profiles</span>
+              <span className="text-gray-500 ml-1 sm:ml-2 truncate">with profiles</span>
             </div>
           </div>
 
           {/* Employers */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-2 sm:p-3 lg:p-4 xl:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Employers</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{formatNumber(stats?.by_type?.employers || 0)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide truncate">Employers</p>
+                <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1 lg:mt-2">{formatNumber(stats?.by_type?.employers || 0)}</p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg">
-                <BuildingOfficeIcon className="w-8 h-8 text-white" />
+              <div className="p-1 sm:p-2 lg:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl shadow-lg ml-1 sm:ml-2 flex-shrink-0">
+                <BuildingOfficeIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 text-white" />
               </div>
             </div>
-            <div className="mt-6 flex items-center text-sm">
+            <div className="mt-1 sm:mt-2 lg:mt-3 xl:mt-4 flex items-center text-xs sm:text-sm">
               <span className="text-purple-600 font-semibold">{stats?.by_type?.admins || 0}</span>
-              <span className="text-gray-500 ml-2">admins</span>
+              <span className="text-gray-500 ml-1 sm:ml-2 truncate">admins</span>
             </div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Users ({filteredUsers.length})</h3>
-            <div className="flex items-center space-x-4">
+        <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-4 lg:p-6 xl:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 mb-3 sm:mb-4 lg:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate">Users ({filteredUsers.length})</h3>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                 <div className="relative">
-                <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <MagnifyingGlassIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                   placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 sm:pl-9 lg:pl-10 pr-2 sm:pr-3 lg:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                 />
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center justify-center px-3 py-1.5 sm:px-4 sm:py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm lg:text-base"
               >
-                <FunnelIcon className="w-5 h-5 mr-2" />
-                Filters
-                {showFilters ? <ChevronUpIcon className="w-4 h-4 ml-1" /> : <ChevronDownIcon className="w-4 h-4 ml-1" />}
+                <FunnelIcon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filter</span>
+                {showFilters ? <ChevronUpIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1" /> : <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />}
               </button>
                 </div>
               </div>
               
           {/* Filters */}
           {showFilters && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">User Type</label>
-                <select
+            <div className="mb-3 sm:mb-4 lg:mb-6 p-2 sm:p-3 lg:p-4 bg-gray-50 rounded-lg sm:rounded-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">User Type</label>
+                  <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All Types</option>
                     <option value="job_seeker">Job Seekers</option>
                     <option value="employer">Employers</option>
                     <option value="admin">Admins</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Verification</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Verification</label>
                   <select
                     value={filterVerified}
                     onChange={(e) => setFilterVerified(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm lg:text-base"
                   >
                     <option value="all">All</option>
-                  <option value="verified">Verified</option>
-                  <option value="unverified">Unverified</option>
-                </select>
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Unverified</option>
+                  </select>
+                </div>
               </div>
-              </div>
-                    </div>
-                  )}
+            </div>
+          )}
 
           {/* Users Table - Desktop */}
           <div className="hidden lg:block">
@@ -748,73 +782,73 @@ const AdminUsersPage: React.FC = () => {
           </div>
 
           {/* Users Cards - Mobile & Tablet */}
-          <div className="lg:hidden space-y-4">
+          <div className="lg:hidden space-y-3">
             {filteredUsers.map((user) => (
-              <div key={user.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              <div key={user.id} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <UserIcon className="w-6 h-6 text-white" />
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                         {user.first_name} {user.last_name}
                       </h3>
-                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getUserTypeColor(user.user_type)}`}>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</p>
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1 sm:mt-2">
+                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getUserTypeColor(user.user_type)}`}>
                           {user.user_type.replace('_', ' ').toUpperCase()}
                         </span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.is_active, user.is_verified)}`}>
+                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getStatusColor(user.is_active, user.is_verified)}`}>
                           {getStatusIcon(user.is_active, user.is_verified)}
-                          <span className="ml-1">{getStatusText(user.is_active, user.is_verified)}</span>
+                          <span className="ml-1 hidden sm:inline">{getStatusText(user.is_active, user.is_verified)}</span>
                         </span>
                       </div>
                     </div>
                   </div>
                   
                   {/* Action Menu */}
-                  <div className="flex items-center space-x-1 ml-2">
+                  <div className="flex items-center space-x-0.5 sm:space-x-1 ml-1 sm:ml-2 flex-shrink-0">
                     <button
                       onClick={() => handleViewUser(user)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-1 sm:p-1.5 text-blue-600 hover:bg-blue-50 rounded-md sm:rounded-lg transition-colors"
                       title="View Details"
                     >
-                      <EyeIcon className="w-4 h-4" />
+                      <EyeIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                     <button
                       onClick={() => handleEditUser(user)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-1 sm:p-1.5 text-green-600 hover:bg-green-50 rounded-md sm:rounded-lg transition-colors"
                       title="Edit User"
                     >
-                      <PencilIcon className="w-4 h-4" />
+                      <PencilIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                     <button
                       onClick={() => handleToggleActive(user)}
-                      className={`p-2 rounded-lg transition-colors ${
+                      className={`p-1 sm:p-1.5 rounded-md sm:rounded-lg transition-colors ${
                         user.is_active 
                           ? 'text-red-600 hover:bg-red-50' 
                           : 'text-green-600 hover:bg-green-50'
                       }`}
                       title={user.is_active ? 'Deactivate' : 'Activate'}
                     >
-                      {user.is_active ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+                      {user.is_active ? <XCircleIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <CheckCircleIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1 sm:p-1.5 text-red-600 hover:bg-red-50 rounded-md sm:rounded-lg transition-colors"
                       title="Delete User"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                   </div>
                 </div>
                 
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex justify-between items-center text-xs text-gray-500">
+                <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs text-gray-500 space-y-1 sm:space-y-0">
                     <span>Joined: {formatDate(user.date_joined)}</span>
                     {user.last_login && (
-                      <span>Last login: {formatDate(user.last_login)}</span>
+                      <span className="truncate">Last login: {formatDate(user.last_login)}</span>
                     )}
                   </div>
                 </div>
@@ -825,21 +859,21 @@ const AdminUsersPage: React.FC = () => {
 
         {/* User Details Modal */}
         {showUserModal && selectedUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">User Details</h3>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-2 sm:px-4">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">User Details</h3>
                   <button
                   onClick={() => setShowUserModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1"
                   >
-                  <XMarkIcon className="w-6 h-6" />
+                  <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
               </div>
 
               {/* Tabs */}
-              <div className="border-b border-gray-200 mb-6">
-                <nav className="-mb-px flex space-x-8">
+              <div className="border-b border-gray-200 mb-4 sm:mb-6">
+                <nav className="-mb-px flex space-x-2 sm:space-x-4 lg:space-x-8 overflow-x-auto">
                   {[
                     { id: 'overview', name: 'Overview', icon: UserIcon },
                     { id: 'profile', name: 'Profile', icon: DocumentTextIcon },
@@ -851,14 +885,15 @@ const AdminUsersPage: React.FC = () => {
                   <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+                        className={`flex items-center py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                           activeTab === tab.id
                             ? 'border-blue-500 text-blue-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
-                        <IconComponent className="w-4 h-4 mr-2" />
-                        {tab.name}
+                        <IconComponent className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">{tab.name}</span>
+                        <span className="sm:hidden">{tab.name.charAt(0)}</span>
                   </button>
                     );
                   })}
@@ -866,9 +901,9 @@ const AdminUsersPage: React.FC = () => {
                 </div>
 
               {/* Tab Content */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {activeTab === 'overview' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
                       <div className="space-y-3">
@@ -1218,48 +1253,48 @@ const AdminUsersPage: React.FC = () => {
 
         {/* Snackbar */}
         {snackbar.open && (
-          <div className={`fixed top-4 right-4 z-50 max-w-sm w-full bg-white rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
+          <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 max-w-sm bg-white rounded-lg sm:rounded-xl shadow-2xl border-l-4 transform transition-all duration-300 ease-in-out ${
             snackbar.type === 'success' ? 'border-green-500' : 
             snackbar.type === 'error' ? 'border-red-500' : 
             snackbar.type === 'warning' ? 'border-yellow-500' : 'border-blue-500'
           }`}>
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
                   {snackbar.type === 'success' && (
-                    <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                    <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                   )}
                   {snackbar.type === 'error' && (
-                    <XCircleIcon className="w-6 h-6 text-red-500" />
+                    <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                   )}
                   {snackbar.type === 'warning' && (
-                    <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
+                    <ExclamationTriangleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
                   )}
                   {snackbar.type === 'info' && (
-                    <InformationCircleIcon className="w-6 h-6 text-blue-500" />
+                    <InformationCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                   )}
                 </div>
-                <div className="ml-3 flex-1">
-                  <p className={`text-sm font-medium ${
+                <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                  <p className={`text-xs sm:text-sm font-medium ${
                     snackbar.type === 'success' ? 'text-green-800' : 
                     snackbar.type === 'error' ? 'text-red-800' : 
                     snackbar.type === 'warning' ? 'text-yellow-800' : 'text-blue-800'
                   }`}>
-                {snackbar.message}
+                    {snackbar.message}
                   </p>
-              </div>
-                <div className="ml-4 flex-shrink-0">
-              <button
+                </div>
+                <div className="ml-2 sm:ml-4 flex-shrink-0">
+                  <button
                     onClick={() => setSnackbar({ ...snackbar, open: false })}
-                    className={`inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    className={`inline-flex rounded-md sm:rounded-lg p-1 sm:p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       snackbar.type === 'success' ? 'text-green-500 hover:bg-green-100 focus:ring-green-500' : 
                       snackbar.type === 'error' ? 'text-red-500 hover:bg-red-100 focus:ring-red-500' : 
                       snackbar.type === 'warning' ? 'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-500' : 
                       'text-blue-500 hover:bg-blue-100 focus:ring-blue-500'
                     }`}
                   >
-                    <XMarkIcon className="w-5 h-5" />
-              </button>
+                    <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
                 </div>
               </div>
             </div>
